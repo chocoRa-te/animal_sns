@@ -1,11 +1,11 @@
+// src/lib/firebase.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
-// Firebaseの設定
 const firebaseConfig = {
-  apiKey: "AIzaSyCMTlkYQnz9veMSQsom1DVCfiOTXEtSq_E",
+    apiKey: "AIzaSyCMTlkYQnz9veMSQsomlDVCfiOTXEtSq_E",
   authDomain: "pinterest-clone-first.firebaseapp.com",
   projectId: "pinterest-clone-first",
   storageBucket: "pinterest-clone-first.firebasestorage.app",
@@ -14,18 +14,23 @@ const firebaseConfig = {
   measurementId: "G-KESXHWK8YH"
 };
 
-// Firebaseを初期化
 const app = initializeApp(firebaseConfig);
-
-// 各サービスをエクスポート
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
-// Analytics（クライアントサイドでのみ使用）
-let analytics;
+// Analyticsの初期化をクライアントサイドのみで行うように修正
+// analytics変数を宣言するが初期化はしない
+let analytics = null;
+
+// クライアントサイドでのみAnalyticsを初期化
 if (typeof window !== 'undefined') {
-  const { getAnalytics } = require('firebase/analytics');
-  analytics = getAnalytics(app);
+  // 動的importを使用してサーバーサイドでのエラーを回避
+  import('firebase/analytics').then(({ getAnalytics }) => {
+    analytics = getAnalytics(app);
+  }).catch(error => {
+    console.error('Failed to initialize analytics:', error);
+  });
 }
+
 export { analytics };
