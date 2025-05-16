@@ -5,9 +5,18 @@ import { useEffect, useState } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { PinCard } from "@/components/pins/PinCard"
 
+
+// const [pins, setPins] = useState<Array<{
+//   id: string;
+//   imageUrl: string;
+//   title: string;
+//   username: string;
+//   height: number;
+// }>>([]);
+
 export default function Home() {
   const [pins, setPins] = useState([])
-  
+
   useEffect(() => {
     // テーマに合った実際の画像
     const mockPins = [
@@ -29,7 +38,7 @@ export default function Home() {
         id: "3",
         imageUrl: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
         title: "インテリアのアイデア",
-        username: "home_designer", 
+        username: "home_designer",
         height: 380,
       },
       {
@@ -40,14 +49,14 @@ export default function Home() {
         height: 420,
       },
     ]
-    
+
     setPins(mockPins)
   }, [])
-  
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {pins.map((pin) => (
