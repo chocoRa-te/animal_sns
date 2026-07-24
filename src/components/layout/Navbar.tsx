@@ -53,10 +53,10 @@ function NavIcon({
   badge?: number;
 }) {
   const base =
-    "relative group p-2 rounded-lg transition-colors cursor-pointer block";
+    "relative group p-2 rounded-xl transition-all duration-200 cursor-pointer block";
   const state = active
     ? "bg-[var(--accent-light)] text-[var(--accent)]"
-    : "hover:bg-[var(--border)] text-[var(--text-secondary)]";
+    : "hover:bg-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
   const className = `${base} ${state}`;
 
   const tooltip = (
@@ -123,7 +123,7 @@ export function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-50 bg-[var(--background)] border-b border-[var(--border)]">
+    <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border)]" style={{ boxShadow: "var(--shadow-xs)" }}>
       <div className="max-w-6xl mx-auto flex items-center h-14 px-4 gap-2">
 
         {/* Hamburger menu */}
@@ -146,7 +146,7 @@ export function Navbar() {
                 className="fixed inset-0 z-40"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute top-12 left-0 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg p-2 z-50 w-52">
+              <div className="absolute top-12 left-0 bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-2 z-50 w-52 animate-slide-down" style={{ boxShadow: "var(--shadow-lg)" }}>
                 {session && (
                   <Link
                     href="/follow-requests"

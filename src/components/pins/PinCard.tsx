@@ -68,7 +68,8 @@ export function PinCard({
 
   return (
     <div
-      className="relative mb-4 overflow-hidden rounded-xl shadow-sm bg-[var(--surface)] group cursor-pointer"
+      className="relative mb-4 overflow-hidden rounded-2xl bg-[var(--surface)] group cursor-pointer transition-shadow duration-300 ease-out"
+      style={{ boxShadow: isHovered ? "var(--shadow-md)" : "var(--shadow-xs)" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -86,17 +87,17 @@ export function PinCard({
             width={400}
             height={300}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="w-full h-auto object-cover transition-transform duration-300 ease-out"
+            className="w-full h-auto object-cover transition-all duration-500 ease-out"
             style={{
-              transform: isHovered ? "scale(1.04)" : "scale(1)",
-              filter: isHovered ? "brightness(0.88)" : "brightness(1)",
+              transform: isHovered ? "scale(1.035)" : "scale(1)",
+              filter: isHovered ? "brightness(0.84)" : "brightness(1)",
               display: "block",
             }}
           />
         </div>
 
         {/* Card footer */}
-        <div className="p-3">
+        <div className="p-3.5">
           {title && (
             <h3 className="font-semibold text-sm line-clamp-2 text-[var(--text-primary)] leading-snug mb-1">
               {title}
@@ -137,122 +138,125 @@ export function PinCard({
         </div>
       </Link>
 
-      {/* Hover overlay actions */}
-      {isHovered && (
-        <div className="absolute inset-0 pointer-events-none rounded-xl">
-          {/* Save button */}
-          <div className="absolute top-2 right-2 pointer-events-auto">
-            <button
-              className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-full text-xs font-semibold shadow transition-colors"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              aria-label="保存"
-            >
-              保存
-            </button>
-          </div>
+      {/* Hover overlay — always mounted, opacity-driven for smooth fade */}
+      <div
+        className="absolute inset-0 pointer-events-none rounded-2xl transition-opacity duration-300 ease-out"
+        style={{ opacity: isHovered ? 1 : 0 }}
+      >
+        {/* Save button */}
+        <div className="absolute top-2.5 right-2.5 pointer-events-auto">
+          <button
+            className="px-3 py-1.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] active:scale-95 text-white rounded-full text-xs font-semibold transition-all duration-150"
+            style={{ boxShadow: "var(--shadow-sm)" }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            aria-label="保存"
+          >
+            保存
+          </button>
+        </div>
 
-          {/* Top-left actions */}
-          <div className="absolute top-2 left-2 flex gap-1 pointer-events-auto">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-              aria-label="シェア"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            >
-              <Share2 className="w-4 h-4 text-[var(--text-primary)]" />
-            </Button>
+        {/* Top-left actions */}
+        <div className="absolute top-2.5 left-2.5 flex gap-1.5 pointer-events-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm border-0 active:scale-95 transition-transform duration-150"
+            aria-label="シェア"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <Share2 className="w-3.5 h-3.5 text-[var(--text-primary)]" />
+          </Button>
 
-            {isOwner && (
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-                  aria-label="メニュー"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setMenuOpen(!menuOpen);
-                  }}
-                >
-                  <MoreHorizontal className="w-4 h-4 text-[var(--text-primary)]" />
-                </Button>
-
-                {menuOpen && (
-                  <div
-                    className="absolute left-0 top-9 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg w-32 z-50"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        router.push(`/pins/${pinId}/edit`);
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--background)] rounded-t-xl"
-                    >
-                      編集
-                    </button>
-                    <button
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!confirm("削除しますか？")) return;
-                        await fetch(`/api/pins/${pinId}`, { method: "DELETE" });
-                        router.refresh();
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 rounded-b-xl"
-                    >
-                      削除
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!isOwner && (
+          {isOwner && (
+            <div className="relative">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-                aria-label="その他"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                className="w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm border-0 active:scale-95 transition-transform duration-150"
+                aria-label="メニュー"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(!menuOpen);
+                }}
               >
-                <MoreHorizontal className="w-4 h-4 text-[var(--text-primary)]" />
+                <MoreHorizontal className="w-3.5 h-3.5 text-[var(--text-primary)]" />
               </Button>
-            )}
-          </div>
 
-          {/* Bottom-right actions */}
-          <div className="absolute bottom-14 right-2 flex gap-1 pointer-events-auto">
+              {menuOpen && (
+                <div
+                  className="absolute left-0 top-10 bg-[var(--surface)] border border-[var(--border)] rounded-2xl w-32 z-50 animate-scale-in overflow-hidden"
+                  style={{ boxShadow: "var(--shadow-lg)" }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      router.push(`/pins/${pinId}/edit`);
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--background)] transition-colors"
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!confirm("削除しますか？")) return;
+                      await fetch(`/api/pins/${pinId}`, { method: "DELETE" });
+                      router.refresh();
+                    }}
+                    className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    削除
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isOwner && (
             <Button
               variant="ghost"
               size="icon"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-              aria-label="コメント"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                router.push(`/pins/${pinId}`);
-              }}
+              className="w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm border-0 active:scale-95 transition-transform duration-150"
+              aria-label="その他"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
             >
-              <MessageCircle className="w-4 h-4 text-[var(--text-primary)]" />
+              <MoreHorizontal className="w-3.5 h-3.5 text-[var(--text-primary)]" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm"
-              aria-label="いいね"
-              onClick={handleLike}
-            >
-              <Heart
-                className={`w-4 h-4 ${liked ? "text-red-500 fill-red-500" : "text-[var(--text-primary)]"}`}
-              />
-            </Button>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Bottom-right actions */}
+        <div className="absolute bottom-14 right-2.5 flex gap-1.5 pointer-events-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm border-0 active:scale-95 transition-transform duration-150"
+            aria-label="コメント"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/pins/${pinId}`);
+            }}
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-[var(--text-primary)]" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8 rounded-full bg-white/95 hover:bg-white shadow-sm border-0 active:scale-95 transition-transform duration-150"
+            aria-label="いいね"
+            onClick={handleLike}
+          >
+            <Heart
+              className={`w-3.5 h-3.5 transition-colors duration-150 ${liked ? "text-red-500 fill-red-500" : "text-[var(--text-primary)]"}`}
+            />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

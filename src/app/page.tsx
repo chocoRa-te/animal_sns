@@ -36,13 +36,16 @@ const MASONRY_BREAKPOINTS = {
   480: 2,
 };
 
-function PinSkeleton() {
+const SKELETON_HEIGHTS = [220, 300, 260, 340, 190, 280, 310, 240];
+
+function PinSkeleton({ index }: { index: number }) {
+  const h = SKELETON_HEIGHTS[index % SKELETON_HEIGHTS.length];
   return (
-    <div className="mb-4 rounded-xl overflow-hidden bg-[var(--surface)] animate-pulse">
-      <div className="bg-[var(--border)]" style={{ height: `${180 + Math.floor(Math.random() * 160)}px` }} />
-      <div className="p-3 space-y-2">
-        <div className="h-3 bg-[var(--border)] rounded w-3/4" />
-        <div className="h-2.5 bg-[var(--border)] rounded w-1/3" />
+    <div className="mb-4 rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-xs)" }}>
+      <div className="skeleton" style={{ height: `${h}px` }} />
+      <div className="p-3.5 space-y-2 bg-[var(--surface)]">
+        <div className="skeleton h-3 rounded-full w-3/4" />
+        <div className="skeleton h-2.5 rounded-full w-1/3" />
       </div>
     </div>
   );
@@ -132,11 +135,12 @@ export default function Home() {
               <button
                 key={cat}
                 onClick={() => setSelected(cat)}
-                className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
+                className={`px-3.5 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all duration-200 ${
                   selected === cat
                     ? "bg-[var(--accent)] text-white"
-                    : "bg-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--accent-light)] hover:text-[var(--accent)]"
+                    : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-[var(--accent-light)]"
                 }`}
+                style={selected === cat ? { boxShadow: "var(--shadow-xs)" } : {}}
               >
                 {cat === "すべて" ? "すべて" : `#${cat}`}
               </button>
@@ -153,7 +157,7 @@ export default function Home() {
             columnClassName="pl-4 bg-clip-padding"
           >
             {Array.from({ length: 8 }).map((_, i) => (
-              <PinSkeleton key={i} />
+              <PinSkeleton key={i} index={i} />
             ))}
           </Masonry>
         ) : filtered.length === 0 ? (
@@ -176,7 +180,7 @@ export default function Home() {
         ) : (
           <Masonry
             breakpointCols={MASONRY_BREAKPOINTS}
-            className="flex -ml-4 w-auto"
+            className="flex -ml-4 w-auto animate-fade-up"
             columnClassName="pl-4 bg-clip-padding"
           >
             {filtered.map((pin) => (

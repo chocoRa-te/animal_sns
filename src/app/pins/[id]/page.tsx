@@ -199,13 +199,23 @@ export default function PinDetailPage() {
   // ピンが読み込まれるまでナビバーだけ表示
   if (!pin)
     return (
-      <div className="min-h-screen bg-[#F7F5F3]">
+      <div className="min-h-screen bg-[var(--background)]">
         <Navbar />
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <div className="skeleton h-8 w-16 rounded-full mb-8" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="skeleton rounded-2xl" style={{ height: "420px" }} />
+            <div className="space-y-4">
+              <div className="skeleton h-7 rounded-full w-2/3" />
+              <div className="skeleton h-4 rounded-full w-1/4" />
+            </div>
+          </div>
+        </div>
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-[#F7F5F3]">
+    <div className="min-h-screen bg-[var(--background)]">
       <Navbar />
       {/* コメントの右クリックメニュー */}
       {commentContextMenu && (
