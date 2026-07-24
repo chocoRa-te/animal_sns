@@ -1,10 +1,9 @@
 // src/components/pins/PinCard.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Heart, MessageCircle, MoreHorizontal, Share2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle, MoreHorizontal, Share2, Pencil, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -12,9 +11,10 @@ interface PinCardProps {
   imageUrl: string;
   title: string;
   username: string;
-  height: number;
+  /** @deprecated height is no longer used — image drives its own height */
+  height?: number;
   category?: string;
-  tags?: string; // ← 追加
+  tags?: string;
   onClick?: () => void;
   pinId: string;
   isOwner?: boolean;
@@ -25,7 +25,6 @@ export function PinCard({
   imageUrl,
   title,
   username,
-  height,
   category,
   tags,
   onClick,
@@ -36,203 +35,248 @@ export function PinCard({
   const [isHovered, setIsHovered] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [likeAnimating, setLikeAnimating] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
 
+  // Always fetch like count and own liked status
   useEffect(() => {
-    if (isOwner) {
-      fetch(`/api/likes?pinId=${pinId}`)
-        .then((res) => res.json())
-        .then((data) => setLikeCount(data.count));
-    }
-  }, [pinId, isOwner]);
+    fetch(`/api/likes?pinId=${pinId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setLikeCount(data.count ?? 0);
+        if (session?.user?.id && data.likedBy) {
+          setLiked(data.likedBy.includes(session.user.id));
+        }
+      });
+  }, [pinId, session?.user?.id]);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!session?.user?.id) return;
 
-    const res = await fetch("/api/likes", {
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLikeCount((prev) => (newLiked ? prev + 1 : Math.max(0, prev - 1)));
+    if (newLiked) {
+      setLikeAnimating(true);
+      setTimeout(() => setLikeAnimating(false), 300);
+    }
+
+    await fetch("/api/likes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pinId, userId: session.user.id }),
     });
-    const data = await res.json();
-    setLiked(data.liked);
-
-    if (isOwner) {
-      setLikeCount((prev) => (data.liked ? prev + 1 : prev - 1));
-    }
   };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await fetch(`/api/pins/${pinId}`, { method: "DELETE" });
+    setShowDeleteConfirm(false);
+    router.refresh();
+  };
+
+  const tagList = (tags || category || "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   return (
     <div
-      className="relative mb-4 overflow-hidden rounded-lg shadow-sm"
-      style={{ height: `${height}px` }}
+      className="group relative w-full rounded-2xl overflow-hidden bg-[#FFFFFF] shadow-sm hover:shadow-md transition-shadow cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => { setIsHovered(false); setMenuOpen(false); }}
       onClick={() => router.push(`/pins/${pinId}`)}
     >
-      <div className="relative w-full h-full">
+      {/* ── Image ── */}
+      <div className="relative w-full overflow-hidden">
         <Image
           src={imageUrl || "/placeholder.svg"}
           alt={title}
-          fill
-          className="object-cover transition-transform duration-200 ease-in-out"
-          style={{
-            transform: isHovered ? "scale(1.05)" : "scale(1)",
-            filter: isHovered ? "brightness(0.9)" : "brightness(1)",
-          }}
+          width={600}
+          height={800}
+          className="w-full h-auto object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
 
+        {/* Hover overlay — desktop action buttons */}
         {isHovered && (
-          <>
-            {/* 右上：保存ボタン */}
-            <div className="absolute top-2 right-2 z-10">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="rounded-full font-medium text-sm shadow-md"
-              >
-                保存
-              </Button>
-            </div>
+          <div className="absolute inset-0 bg-[#1A1814]/10 animate-fade-in" />
+        )}
 
-            {/* 左上：シェアと詳細 */}
-            <div className="absolute top-2 left-2 z-10 flex space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 rounded-full bg-[#F7F5F3]/90 hover:bg-white shadow-sm"
-              >
-                <Share2 className="w-4 h-4 text-gray-800" />
-              </Button>
+        {/* Desktop: top-left actions on hover */}
+        {isHovered && (
+          <div
+            className="absolute top-2 left-2 flex gap-1 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="シェア"
+              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center transition-colors"
+            >
+              <Share2 className="w-4 h-4 text-[#1A1814]" />
+            </button>
 
-              {/* 3点メニュー（自分の投稿のみ） */}
-              {isOwner && (
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 rounded-full bg-[#F7F5F3]/90 hover:bg-white shadow-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpen(!menuOpen);
-                    }}
-                  >
-                    <MoreHorizontal className="w-4 h-4 text-gray-800" />
-                  </Button>
+            {isOwner && (
+              <div className="relative" ref={menuRef}>
+                <button
+                  aria-label="メニューを開く"
+                  className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center transition-colors"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                >
+                  <MoreHorizontal className="w-4 h-4 text-[#1A1814]" />
+                </button>
 
-                  {menuOpen && (
-                    <div
-                      className="absolute left-0 top-9 bg-white border border-[#E8E4E0] rounded-xl shadow-lg w-32 z-50"
-                      onClick={(e) => e.stopPropagation()}
+                {menuOpen && (
+                  <div className="absolute left-0 top-10 bg-white border border-[#E8E4E0] rounded-2xl shadow-lg w-36 z-50 overflow-hidden animate-fade-in">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/pins/${pinId}/edit`);
+                      }}
+                      className="w-full flex items-center gap-2 text-left px-4 py-3 text-sm text-[#1A1814] hover:bg-[#F7F5F3]"
                     >
+                      <Pencil className="w-3.5 h-3.5 text-[#6B6560]" />
+                      編集
+                    </button>
+                    {!showDeleteConfirm ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/pins/${pinId}/edit`);
+                          setShowDeleteConfirm(true);
                         }}
-                        className="w-full text-left px-4 py-3 text-sm text-[#1A1814] hover:bg-[#F7F5F3] rounded-t-xl"
+                        className="w-full flex items-center gap-2 text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50"
                       >
-                        編集
-                      </button>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!confirm("削除しますか？")) return;
-                          await fetch(`/api/pins/${pinId}`, {
-                            method: "DELETE",
-                          });
-                          window.location.reload();
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 rounded-b-xl"
-                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                         削除
                       </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                    ) : (
+                      <div
+                        className="px-3 py-2 animate-fade-in"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="text-xs text-[#6B6560] mb-2 leading-snug">
+                          この思い出を削除しますか？
+                        </p>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={handleDelete}
+                            className="flex-1 text-xs bg-red-500 text-white py-1.5 rounded-lg font-medium hover:bg-red-600 transition-colors"
+                          >
+                            削除
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowDeleteConfirm(false);
+                            }}
+                            className="flex-1 text-xs border border-[#E8E4E0] text-[#6B6560] py-1.5 rounded-lg hover:bg-[#F7F5F3] transition-colors"
+                          >
+                            戻る
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
-              {/* 自分の投稿でない場合は通常の3点ボタン */}
-              {!isOwner && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-8 h-8 rounded-full bg-[#F7F5F3]/90 hover:bg-white shadow-sm"
-                >
-                  <MoreHorizontal className="w-4 h-4 text-gray-800" />
-                </Button>
-              )}
-            </div>
-
-            {/* 右下：コメントといいね */}
-            <div className="absolute bottom-2 right-2 z-10 flex space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 rounded-full bg-[#F7F5F3]/90 hover:bg-white shadow-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push(`/pins/${pinId}`);
-                }}
-              >
-                <MessageCircle className="w-4 h-4 text-gray-800" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-8 h-8 rounded-full bg-[#F7F5F3]/90 hover:bg-white shadow-sm"
-                onClick={handleLike}
-              >
-                <Heart
-                  className={`w-4 h-4 ${liked ? "text-red-500 fill-red-500" : "text-gray-800"}`}
-                />
-              </Button>
-            </div>
-          </>
+        {/* Desktop: comment button on hover */}
+        {isHovered && (
+          <div
+            className="absolute bottom-2 right-2 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="コメントを見る"
+              className="w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/pins/${pinId}`);
+              }}
+            >
+              <MessageCircle className="w-4 h-4 text-[#1A1814]" />
+            </button>
+          </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-3 bg-[#F7F5F3]/90 backdrop-blur-sm">
-        <h3 className="font-semibold text-sm line-clamp-1 text-gray-900">
+      {/* ── Info strip — always visible, memory-book caption style ── */}
+      <div className="px-3 pt-2.5 pb-3">
+        {/* Title */}
+        <h3 className="font-medium text-sm leading-snug line-clamp-2 text-[#1A1814] mb-1">
           {title}
         </h3>
-        <p
-          className="text-xs text-gray-700 font-medium cursor-pointer hover:underline"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (userId) router.push(`/users/${userId}`);
-          }}
-        >
-          @{username}
-        </p>
-        {isOwner && likeCount > 0 && (
-          <p className="text-xs text-gray-500 mt-1">❤️ {likeCount}</p>
-        )}
-      </div>
 
-      {/* タグ表示 */}
-      {tags && (
-        <div className="flex gap-1 flex-wrap mt-1">
-          {tags
-            .split(",")
-            .filter(Boolean)
-            .map((tag) => (
+        {/* Username + like button row */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            aria-label={`${username}のプロフィールへ`}
+            className="text-xs text-[#A39E99] hover:text-[#6B6560] transition-colors truncate"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (userId) router.push(`/users/${userId}`);
+            }}
+          >
+            @{username}
+          </button>
+
+          {/* Heart — always visible for mobile access */}
+          <button
+            aria-label={liked ? "いいねを取り消す" : "いいね"}
+            onClick={handleLike}
+            className="flex items-center gap-1 shrink-0 group/heart"
+          >
+            <Heart
+              className={`w-4 h-4 transition-colors ${
+                likeAnimating ? "animate-heart-pop" : ""
+              } ${
+                liked
+                  ? "text-[#C9A96E] fill-[#C9A96E]"
+                  : "text-[#A39E99] group-hover/heart:text-[#C9A96E]"
+              }`}
+            />
+            {likeCount > 0 && (
+              <span className={`text-xs tabular-nums ${liked ? "text-[#C9A96E]" : "text-[#A39E99]"}`}>
+                {likeCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Tags */}
+        {tagList.length > 0 && (
+          <div className="flex gap-1 flex-wrap mt-1.5">
+            {tagList.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-xs text-[#A39E99]"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // TODO: タグクリックでカテゴリ別ページへ
-                }}
+                className="text-[10px] text-[#A39E99] bg-[#F7F5F3] px-1.5 py-0.5 rounded-sm"
+                onClick={(e) => e.stopPropagation()}
               >
-                #{tag.trim()}
+                #{tag}
               </span>
             ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

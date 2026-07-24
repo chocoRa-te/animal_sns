@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { PinCard } from "@/components/pins/PinCard";
+import { Camera, Video as VideoIcon } from "lucide-react";
 import Link from "next/link";
 
 interface Pin {
