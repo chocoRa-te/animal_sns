@@ -1,6 +1,8 @@
 // src/contexts/AuthContext.js
 import { createContext, useContext, useState, useEffect } from 'react';
-import { onAuthChange, getCurrentUser } from '../lib/auth';
+import { onAuthChange, } from '../lib/auth';
+
+// getCurrentUserを将来的に追加
 
 const AuthContext = createContext();
 

@@ -1,74 +1,81 @@
 // src/lib/storage.js
-import { storage } from './firebase';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
-// 画像をアップロード（プログレス通知機能付き）
-export const uploadImage = async (file, onProgress = null) => {
+// 画像をCloudinaryにアップロード（プログレス通知機能付き）
+export const uploadImage = async (file, onProgress) => {
   try {
-    // ファイル名から拡張子を抽出
-    const fileNameParts = file.name.split('.');
-    const fileExtension = fileNameParts.length > 1 ? fileNameParts.pop() : 'jpg';
-    
-    // ユニークなファイル名を生成
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    const filePath = `pins/${fileName}`;
-    
-    // Storageの参照を作成
-    const storageRef = ref(storage, filePath);
-    
-    // アップロードタスクの作成
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    
-    // Promise化して結果を待つ
-    return new Promise((resolve, reject) => {
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          // 進捗状況を計算（0-100%）
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload progress: ' + progress.toFixed(1) + '%');
-          
-          // onProgressが関数として渡されていれば呼び出す
-          if (typeof onProgress === 'function') {
-            onProgress(progress);
-          }
-        },
-        (error) => {
-          // エラーハンドリング
-          console.error('Upload error:', error);
-          reject(error);
-        },
-        async () => {
-          // アップロード完了時
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            resolve({
-              url: downloadURL,
-              path: filePath
-            });
-          } catch (err) {
-            reject(err);
-          }
-        }
-      );
+    // プログレス開始
+    if (typeof onProgress === 'function') {
+      onProgress(0);
+    }
+
+    const uploadPreset = 'ml_default';
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+    console.log('Cloud Name:', cloudName);
+    console.log('Upload Preset:', uploadPreset);
+
+    // FormDataを作成
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    // プログレス更新
+    if (typeof onProgress === 'function') {
+      onProgress(25);
+    }
+
+    // Cloudinaryにアップロード
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: formData
     });
+
+    // プログレス更新
+    if (typeof onProgress === 'function') {
+      onProgress(75);
+    }
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Cloudinary エラー詳細:', errorData)
+      throw new Error(`アップロードに失敗しました: ${response.status} - ${errorData}`);
+    }
+
+    const result = await response.json();
+
+    // プログレス完了
+    if (typeof onProgress === 'function') {
+      onProgress(100);
+    }
+
+    return {
+      url: result.secure_url,
+      path: result.public_id
+    };
   } catch (error) {
-    console.error('Error in uploadImage:', error);
+    console.error('Cloudinaryアップロードエラー:', error);
     throw error;
   }
 };
 
 // 画像の削除（必要に応じて）
-export const deleteImage = async (path) => {
-  if (!path) return false;
-  
+export const deleteImage = async (publicId) => {
+  if (!publicId) return false;
+
   try {
-    const storageRef = ref(storage, path);
-    await deleteObject(storageRef);
-    return true;
+    // サーバーサイドでの削除が必要（API secretが必要なため）
+    const response = await fetch('/api/delete-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ publicId }),
+    });
+
+    return response.ok;
   } catch (error) {
-    console.error('Error deleting image:', error);
+    console.error('画像削除エラー:', error);
     return false;
   }
 };
