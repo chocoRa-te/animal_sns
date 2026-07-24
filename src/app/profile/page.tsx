@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { PinCard } from "@/components/pins/PinCard";
 import Link from "next/link";
+import { Image as ImageIcon, Video as VideoIcon } from "lucide-react";
 
 interface Pin {
   id: string;
@@ -37,6 +38,8 @@ export default function ProfilePage() {
     "posts",
   );
   const [bio, setBio] = useState("");
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -45,6 +48,14 @@ export default function ProfilePage() {
     fetch(`/api/settings?userId=${session.user.id}`)
       .then((res) => res.json())
       .then((data) => setBio(data.bio ?? ""));
+
+    // フォロー数を取得
+    fetch(`/api/follow?userId=${session.user.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setFollowerCount(data.followerCount ?? 0);
+        setFollowingCount(data.followingCount ?? 0);
+      });
 
     // 自分の画像投稿を取得
     fetch("/api/pins?type=image")
@@ -168,8 +179,20 @@ export default function ProfilePage() {
             {session.user.name}
           </h1>
           <p className="text-sm text-[#A39E99] mt-0.5">{session.user.email}</p>
+          {/* Follower / following counts */}
+          <div className="flex gap-6 mt-3">
+            <div className="text-center">
+              <p className="text-base font-bold text-[var(--text-primary)] leading-none">{followerCount}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">フォロワー</p>
+            </div>
+            <div className="text-center">
+              <p className="text-base font-bold text-[var(--text-primary)] leading-none">{followingCount}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">フォロー中</p>
+            </div>
+          </div>
+
           {bio && (
-            <p className="text-sm text-[#6B6560] mt-2 text-center max-w-xs">
+            <p className="text-sm text-[#6B6560] mt-3 text-center max-w-xs leading-relaxed">
               {bio}
             </p>
           )}
@@ -260,7 +283,7 @@ export default function ProfilePage() {
                 <div
                   key={video.id}
                   className="relative aspect-[9/16] bg-black rounded-lg overflow-hidden cursor-pointer"
-                  onClick={() => router.push(`/video`)}
+                  onClick={() => router.push(`/pins/${video.id}`)}
                 >
                   {video.imageUrl ? (
                     <img
@@ -309,8 +332,9 @@ export default function ProfilePage() {
                 >
                   <div className="flex-1 mb-3">
                     <h2 className="font-medium text-[#1A1814]">#{album.tag}</h2>
-                    <p className="text-xs text-[#A39E99] mt-0.5">
-                      📷 {album.photoCount}枚　🎥 {album.videoCount}本
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-2">
+                      <span className="flex items-center gap-1"><ImageIcon className="w-3 h-3" />{album.photoCount}枚</span>
+                      <span className="flex items-center gap-1"><VideoIcon className="w-3 h-3" />{album.videoCount}本</span>
                     </p>
                   </div>
                   <div className="grid grid-cols-3 gap-1 rounded-lg overflow-hidden">

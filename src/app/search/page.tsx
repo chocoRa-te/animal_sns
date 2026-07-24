@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
-import { Search, Play } from "lucide-react";
+import { Search, Play, X } from "lucide-react";
 
 interface Pin {
   id: string;
@@ -23,114 +23,153 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [isSearched, setIsSearched] = useState(false);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+  const handleSearch = async (q?: string) => {
+    const searchQuery = q ?? query;
+    if (!searchQuery.trim()) return;
     setLoading(true);
     setIsSearched(true);
 
     try {
-    const res = await fetch(`/api/pins?search=${query}`);
-    const data = await res.json();
-    setResults(data);
-    }catch (err){
-      console.error(err)
-      setResults([])
-    }finally{
-    setLoading(false);
-  }
-}
+      const res = await fetch(`/api/pins?search=${encodeURIComponent(searchQuery)}`);
+      const data = await res.json();
+      setResults(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    // 検索前は最新投稿を表示
+  const handleClear = () => {
+    setQuery("");
+    setIsSearched(false);
     fetch("/api/pins")
       .then((res) => res.json())
-      .then((data) => setResults(data));
+      .then((data) => setResults(Array.isArray(data) ? data : []));
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetch("/api/pins")
+      .then((res) => res.json())
+      .then((data) => setResults(Array.isArray(data) ? data : []))
+      .finally(() => setLoading(false));
   }, []);
 
-  {/* 見出し */}
-  {!loading && (
-      <p className="text-xs text-[#A39E99] mb-3">
-        {isSearched
-          ? `「${query}」の検索結果 ${results.length}件`
-          : "最新の投稿"}
-      </p>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#F7F5F3]">
+    <div className="min-h-screen bg-[var(--background)]">
       <Navbar />
       <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-xl font-semibold text-[#1A1814] mb-4">検索</h1>
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] mb-4">検索</h1>
 
-        {/* 検索欄 */}
-        <div className="flex gap-2 mb-6">
-          <input
-            type="text"
-            placeholder="キーワード・タグ・ユーザー名で検索..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="flex-1 border border-[#E8E4E0] rounded-full px-4 py-2 text-sm bg-white focus:outline-none focus:border-[#A39E99] text-[#1A1814]"
-          />
+        {/* Search bar */}
+        <div className="flex gap-2 mb-4">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="キーワード・タグ・ユーザー名で検索..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) handleSearch();
+              }}
+              autoFocus
+              className="w-full border border-[var(--border)] rounded-full px-4 py-2.5 pr-10 text-sm bg-[var(--surface)] focus:outline-none focus:border-[var(--accent)] text-[var(--text-primary)] transition-colors"
+            />
+            {query && (
+              <button
+                onClick={handleClear}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                aria-label="クリア"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <button
-            onClick={handleSearch}
-            className="p-2 bg-[#1A1814] rounded-full hover:bg-[#3D3830] transition-colors"
+            onClick={() => handleSearch()}
+            className="p-2.5 bg-[var(--accent)] rounded-full hover:bg-[var(--accent-hover)] transition-colors"
+            aria-label="検索"
           >
             <Search className="h-5 w-5 text-white" />
           </button>
         </div>
 
-        {/* ローディング */}
+        {/* Result heading — correctly inside return */}
+        {!loading && (
+          <p className="text-xs text-[var(--text-muted)] mb-4">
+            {isSearched
+              ? `「${query}」の検索結果 ${results.length}件`
+              : `最新の投稿 ${results.length}件`}
+          </p>
+        )}
+
+        {/* Loading */}
         {loading && (
-          <p className="text-center text-[#A39E99] text-sm">検索中...</p>
+          <div className="grid grid-cols-3 gap-0.5">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="aspect-square bg-[var(--border)] animate-pulse rounded-sm" />
+            ))}
+          </div>
         )}
 
-        {/* 検索結果 */}
-        {!loading && results.length === 0 && query && (
-          <p className="text-center text-[#A39E99] text-sm">結果がありません</p>
+        {/* No results */}
+        {!loading && results.length === 0 && isSearched && (
+          <p className="text-center text-[var(--text-muted)] text-sm py-12">
+            「{query}」に一致する投稿がありません
+          </p>
         )}
 
-        <div className="grid grid-cols-3 gap-0.5">
-          {results.map((pin) => (
-            <div
-              key={pin.id}
-              className="relative aspect-square bg-[#E8E4E0] cursor-pointer overflow-hidden"
-              onClick={() => {
-                if (pin.type === "video") {
-                  router.push("/video");
-                } else {
-                  router.push(`/pins/${pin.id}`);
-                }
-              }}
-            >
-              {/* サムネイル */}
-              {pin.imageUrl ? (
-                <img
-                  src={pin.imageUrl}
-                  alt={pin.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : pin.videoUrl ? (
-                <video
-                  src={pin.videoUrl}
-                  className="w-full h-full object-cover"
-                  muted
-                />
-              ) : null}
-
-              {/* 動画マーク */}
-              {pin.type === "video" && (
-                <div className="absolute top-1 right-1">
-                  <Play
-                    className="h-4 w-4 text-white drop-shadow-lg"
-                    fill="white"
+        {/* Results grid */}
+        {!loading && results.length > 0 && (
+          <div className="grid grid-cols-3 gap-0.5">
+            {results.map((pin) => (
+              <div
+                key={pin.id}
+                className="relative aspect-square bg-[var(--border)] cursor-pointer overflow-hidden group"
+                onClick={() => {
+                  if (pin.type === "video") {
+                    router.push(`/pins/${pin.id}`);
+                  } else {
+                    router.push(`/pins/${pin.id}`);
+                  }
+                }}
+              >
+                {pin.imageUrl ? (
+                  <img
+                    src={pin.imageUrl}
+                    alt={pin.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />
+                ) : pin.videoUrl ? (
+                  <video
+                    src={pin.videoUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                  />
+                ) : null}
+
+                {/* Video indicator */}
+                {pin.type === "video" && (
+                  <div className="absolute top-1.5 right-1.5">
+                    <Play
+                      className="h-4 w-4 text-white drop-shadow-lg"
+                      fill="white"
+                    />
+                  </div>
+                )}
+
+                {/* Hover title overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end pointer-events-none">
+                  <p className="text-white text-xs font-medium px-2 pb-2 line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {pin.title}
+                  </p>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

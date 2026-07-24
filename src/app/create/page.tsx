@@ -184,7 +184,7 @@ export default function CreatePage() {
                 画像をドラッグ&ドロップ
               </p>
               <p className="text-xs text-[#A39E99] mb-4">または</p>
-              <label className="bg-[#1A1814] hover:bg-[#3D3830] text-white px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-colors">
+              <label className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-colors">
                 デバイスから選択
                 <input
                   type="file"
@@ -236,7 +236,7 @@ export default function CreatePage() {
             {/* デフォルトタグ */}
             <p className="text-xs text-[#A39E99] mb-2">デフォルト</p>
             <div className="flex gap-2 flex-wrap mb-4">
-              {["自然", "料理", "インテリア", "旅行"].map((cat) => (
+              {["いぬ", "ねこ", "うさぎ", "とり", "さかな", "は虫類", "ハムスター", "その他"].map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -317,7 +317,7 @@ export default function CreatePage() {
           <button
             onClick={handleSavePin}
             disabled={loading}
-            className="w-full py-2.5 bg-[#1A1814] text-white rounded-lg text-sm font-medium hover:bg-[#3D3830] transition-colors disabled:opacity-50"
+            className="w-full py-2.5 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

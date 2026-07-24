@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/Navbar";
 import {
   Heart,
   MessageCircle,
@@ -12,6 +11,7 @@ import {
   Pause,
   VolumeX,
   Volume2,
+  ChevronLeft,
 } from "lucide-react";
 
 interface Video {
@@ -112,7 +112,15 @@ export default function VideoPage() {
 
   return (
     <div className="h-screen bg-black overflow-hidden" onWheel={handleScroll}>
-      <Navbar />
+      {/* Floating back button */}
+      <button
+        onClick={() => router.back()}
+        className="fixed top-4 left-4 z-50 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/60 transition-colors"
+        aria-label="前のページに戻る"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+
       {videos.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <p className="text-white text-sm">まだ動画がありません</p>
@@ -401,7 +409,7 @@ export default function VideoPage() {
       {/* 投稿ボタン */}
       <button
         onClick={() => router.push("/video/upload")}
-        className="fixed bottom-6 right-6 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#F7F5F3] transition-colors z-50"
+        className="fixed bottom-6 left-4 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#F7F5F3] transition-colors z-50"
       >
         <Plus className="h-6 w-6 text-[#1A1814]" />
       </button>

@@ -48,13 +48,20 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="bg-white border border-[#E8E4E0] rounded-2xl p-8">
 
-          <div className="flex justify-center mb-6">
-            <div className="h-10 w-10 rounded-full bg-[#1A1814] flex items-center justify-center text-white text-sm font-bold">
-              P
-            </div>
+          <div className="flex flex-col items-center mb-6">
+            <span className="text-[var(--accent)] mb-2">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-10 h-10" aria-hidden="true">
+                <circle cx="6.5" cy="6.5" r="2.2" />
+                <circle cx="11" cy="4.5" r="1.8" />
+                <circle cx="15.5" cy="5.5" r="2" />
+                <circle cx="18.5" cy="9.5" r="1.8" />
+                <path d="M12 10c-2.5 0-5.5 2-6 5-.3 1.8.5 3.5 2 4.2 1 .5 2.2.3 3-.3.5-.3 1-.5 1-.5s.5.2 1 .5c.8.6 2 .8 3 .3 1.5-.7 2.3-2.4 2-4.2-.5-3-3.5-5-6-5z" />
+              </svg>
+            </span>
+            <span className="text-xl font-bold text-[var(--text-primary)] tracking-tight">もふ</span>
           </div>
 
-          <h1 className="text-xl font-semibold text-center mb-6 text-gray-900">ログイン</h1>
+          <h1 className="text-base font-semibold text-center mb-6 text-[var(--text-secondary)]">ログイン</h1>
 
           {error && (
             <div className="mb-4 p-3 bg-[#F7F5F3] border border-[#E8E4E0] text-[#1A1814] rounded-lg text-sm">
@@ -88,7 +95,7 @@ export default function LoginPage() {
             </div>
 
             <button
-              className="w-full bg-[#1A1814] hover:bg-[#3D3830] text-white text-sm font-medium py-2.5 rounded-lg transition-colors mt-2"
+              className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium py-2.5 rounded-lg transition-colors mt-2"
               onClick={handleLogin}
               disabled={loading}
             >

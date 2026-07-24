@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ピンテスト - Pinterest風UI",
-  description: "Pinterest風のユーザーインターフェースを持つWebアプリケーション",
+  title: "もふ — ペットの思い出をシェアしよう",
+  description: "大切なペットとの思い出を写真や動画でシェアできるコミュニティ。犬・猫・うさぎなど、すべての動物好きが集まる場所。",
 };
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <SessionProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </SessionProvider>

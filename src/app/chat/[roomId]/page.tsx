@@ -185,12 +185,15 @@ export default function ChatRoomPage() {
 
   // メッセージ編集
   const handleEdit = async (messageId: string, newContent: string) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !newContent.trim()) return;
     await fetch(`/api/chat/${roomId}`, {
-      method: "DELETE",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messageId, userId: session.user.id, newContent }),
+      body: JSON.stringify({ messageId, userId: session.user.id, content: newContent }),
     });
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, content: newContent } : m))
+    );
     setEditingMessage(null);
     setContextMenu(null);
   };

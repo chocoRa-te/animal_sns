@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Navbar } from "@/components/layout/Navbar";
 import Image from "next/image";
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, ChevronLeft } from "lucide-react"
 
 // ピンの型定義
 interface Pin {
@@ -166,7 +166,7 @@ export default function PinDetailPage() {
   const handleDelete = async () => {
     if (!confirm("削除しますか？")) return;
     await fetch(`/api/pins/${id}`, { method: "DELETE" });
-    window.location.href = "/";
+    router.push("/");
   };
 
   // コメント内の@メンションをクリッカブルリンクに変換
@@ -210,8 +210,12 @@ export default function PinDetailPage() {
       {/* コメントの右クリックメニュー */}
       {commentContextMenu && (
         <div
-          className="fixed bg-white border border-[#E8E4E0] rounded-xl shadow-lg w-40 z-50"
-          style={{ top: commentContextMenu.y, left: commentContextMenu.x }}
+          className="fixed bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg w-40 z-50"
+          style={
+            commentContextMenu.x === 0 && commentContextMenu.y === 0
+              ? { top: "50%", left: "50%", transform: "translate(-50%, -50%)" }
+              : { top: commentContextMenu.y, left: commentContextMenu.x }
+          }
           onClick={(e) => e.stopPropagation()}
         >
           {/* 編集ボタン */}
@@ -247,17 +251,25 @@ export default function PinDetailPage() {
         />
       )}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-6 transition-colors"
+          aria-label="前のページに戻る"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          戻る
+        </button>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* 画像 */}
-          <div
-            className="relative rounded-xl overflow-hidden"
-            style={{ height: "500px" }}
-          >
+          <div className="relative rounded-xl overflow-hidden bg-[var(--border)]">
             <Image
               src={pin.imageUrl || "/placeholder.svg"}
               alt={pin.title || "投稿"}
-              fill
-              className="object-cover"
+              width={800}
+              height={600}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="w-full h-auto object-contain"
+              style={{ display: "block" }}
             />
           </div>
 
@@ -320,8 +332,7 @@ export default function PinDetailPage() {
                 comments.map((comment) => (
                   <div
                     key={comment.id}
-                    className="bg-white rounded-lg p-3 border border-[#E8E4E0]"
-                    // 自分のコメントだけ右クリックでメニューを表示
+                    className="bg-[var(--surface)] rounded-lg p-3 border border-[var(--border)] group"
                     onContextMenu={(e) => {
                       if (session?.user?.id !== comment.user.id) return;
                       e.preventDefault();
@@ -333,13 +344,30 @@ export default function PinDetailPage() {
                       });
                     }}
                   >
+                    <div className="flex items-start justify-between gap-2">
                     {/* コメント投稿者（クリックでプロフィールへ） */}
                     <p
-                      className="text-xs font-medium text-[#1A1814] cursor-pointer hover:underline mb-1"
+                      className="text-xs font-medium text-[var(--text-primary)] cursor-pointer hover:underline mb-1"
                       onClick={() => router.push(`/users/${comment.user.id}`)}
                     >
                       @{comment.user?.name}
                     </p>
+                    {/* Touch-accessible actions for own comments */}
+                    {session?.user?.id === comment.user.id && (
+                      <button
+                        className="p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-opacity flex-shrink-0"
+                        aria-label="コメントのオプション"
+                        onClick={() => setCommentContextMenu({
+                          x: 0,
+                          y: 0,
+                          commentId: comment.id,
+                          content: comment.content,
+                        })}
+                      >
+                        <MoreHorizontal className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    </div>
 
                     {/* 編集中の場合は入力欄を表示 */}
                     {editingComment?.id === comment.id ? (

@@ -9,7 +9,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
   return (
     <button
       onClick={onChange}
-      className={`w-11 h-6 rounded-full transition-colors relative ${value ? "bg-[#1A1814]" : "bg-[#E8E4E0]"}`}
+      className={`w-11 h-6 rounded-full transition-colors relative ${value ? "bg-[var(--accent)]" : "bg-[#E8E4E0]"}`}
     >
       <div className={`w-4 h-4 bg-white rounded-full shadow absolute top-1 transition-transform ${value ? "translate-x-6" : "translate-x-1"}`} />
     </button>
@@ -40,12 +40,15 @@ export default function SettingsPage() {
   const [showLikeCount, setShowLikeCount] = useState(false)
   const [notificationsOn, setNotificationsOn] = useState(true)
   const [isPrivate, setIsPrivate] = useState(false)
+  const [requireFollowApproval, setRequireFollowApproval] = useState(false)
   const [showActivity, setShowActivity] = useState(true)
   const [commentsEnabled, setCommentsEnabled] = useState(true)
   const [showReadReceipt, setShowReadReceipt] = useState(true)
   const [allowDMRequests, setAllowDMRequests] = useState(true)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordMismatch, setPasswordMismatch] = useState(false)
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -55,13 +58,14 @@ export default function SettingsPage() {
     fetch(`/api/settings?userId=${session.user.id}`)
       .then((res) => res.json())
       .then((data) => {
-        setShowLikeCount(data.showLikeCount)
-        setNotificationsOn(data.notificationsOn)
-        setIsPrivate(data.isPrivate)
-        setShowActivity(data.showActivity)
-        setCommentsEnabled(data.commentsEnabled)
-        setShowReadReceipt(data.showReadReceipt)
-        setAllowDMRequests(data.allowDMRequests)
+        setShowLikeCount(data.showLikeCount ?? false)
+        setNotificationsOn(data.notificationsOn ?? true)
+        setIsPrivate(data.isPrivate ?? false)
+        setRequireFollowApproval(data.requireFollowApproval ?? false)
+        setShowActivity(data.showActivity ?? true)
+        setCommentsEnabled(data.commentsEnabled ?? true)
+        setShowReadReceipt(data.showReadReceipt ?? true)
+        setAllowDMRequests(data.allowDMRequests ?? true)
       })
   }, [session])
 
@@ -79,6 +83,11 @@ export default function SettingsPage() {
 
   const handlePasswordChange = async () => {
     if (!session?.user?.id || !currentPassword || !newPassword) return
+    if (newPassword !== confirmPassword) {
+      setPasswordMismatch(true)
+      return
+    }
+    setPasswordMismatch(false)
     setLoading(true)
 
     const res = await fetch("/api/settings", {
@@ -96,6 +105,7 @@ export default function SettingsPage() {
     setTimeout(() => setMessage(""), 3000)
     setCurrentPassword("")
     setNewPassword("")
+    setConfirmPassword("")
     setLoading(false)
   }
 
@@ -169,6 +179,16 @@ export default function SettingsPage() {
             }}
           />
           <SettingRow
+            label="フォロー承認制"
+            description="フォローリクエストを手動で承認する"
+            value={requireFollowApproval}
+            onChange={() => {
+              const newVal = !requireFollowApproval
+              setRequireFollowApproval(newVal)
+              handleToggle("requireFollowApproval", newVal)
+            }}
+          />
+          <SettingRow
             label="コメントを許可"
             description="投稿へのコメントを受け付ける"
             value={commentsEnabled}
@@ -236,12 +256,22 @@ export default function SettingsPage() {
               placeholder="新しいパスワード"
               className="w-full border border-[#E8E4E0] rounded-lg px-3 py-2 text-sm bg-[#F7F5F3] focus:outline-none focus:border-[#A39E99]"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={(e) => { setNewPassword(e.target.value); setPasswordMismatch(false) }}
             />
+            <input
+              type="password"
+              placeholder="新しいパスワード（確認）"
+              className={`w-full border rounded-lg px-3 py-2 text-sm bg-[#F7F5F3] focus:outline-none transition-colors ${passwordMismatch ? "border-red-400 focus:border-red-400" : "border-[#E8E4E0] focus:border-[#A39E99]"}`}
+              value={confirmPassword}
+              onChange={(e) => { setConfirmPassword(e.target.value); setPasswordMismatch(false) }}
+            />
+            {passwordMismatch && (
+              <p className="text-xs text-red-500">パスワードが一致しません</p>
+            )}
             <button
               onClick={handlePasswordChange}
-              disabled={loading}
-              className="w-full py-2.5 bg-[#1A1814] text-white rounded-lg text-sm font-medium hover:bg-[#3D3830] transition-colors"
+              disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+              className="w-full py-2.5 bg-[var(--accent)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors disabled:opacity-40"
             >
               パスワードを変更
             </button>
