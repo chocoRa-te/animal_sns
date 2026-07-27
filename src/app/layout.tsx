@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -15,12 +15,25 @@ const lora = Lora({
   display: "swap",
   variable: "--font-lora",
   style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "memoPaw — 大切なペットとの思い出を残そう",
-  description: "ペットとの大切な瞬間を写真に残して、いつでも振り返れる思い出帳を作ろう。",
-  keywords: ["ペット", "思い出", "写真", "動物", "SNS", "メモリー"],
+  title: "memoPaw — ペットとの思い出帳",
+  description: "大切なペットとの日々を、美しい思い出帳に。写真一枚から始まる、かけがえない記録。",
+  keywords: ["ペット", "思い出", "写真", "動物", "アルバム", "メモリー"],
+  openGraph: {
+    title: "memoPaw — ペットとの思い出帳",
+    description: "大切なペットとの日々を、美しい思い出帳に。",
+    locale: "ja_JP",
+    type: "website",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#F5F0E8",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -32,7 +45,9 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning className="bg-background">
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
         <SessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
+            {children}
+          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>
