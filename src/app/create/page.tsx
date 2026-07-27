@@ -172,7 +172,7 @@ export default function CreatePage() {
           <p className="text-[#C9A96E] text-xs tracking-widest font-medium uppercase">
             {date.monthDay}
           </p>
-          <p className="text-[#6B6055] text-[10px]">{date.weekday}</p>
+          <p className="text-[#C8B89A] text-[10px]">{date.weekday}</p>
         </div>
 
         {/* Save — top-right shortcut (visible once photo chosen) */}
@@ -183,7 +183,7 @@ export default function CreatePage() {
           className={`text-xs font-medium px-3.5 py-1.5 rounded-full transition-all ${
             hasPhoto && !loading
               ? "bg-[#C9A96E] text-[#1C1611] hover:bg-[#D4B47D]"
-              : "text-[#3D3228] pointer-events-none"
+              : "text-[#5A4E40] pointer-events-none"
           }`}
         >
           {loading ? "保存中…" : "残す"}
@@ -254,13 +254,13 @@ export default function CreatePage() {
               onChange={handleFileChange}
               aria-label="写真を選択"
             />
-            <div className="flex flex-col items-center gap-3 pointer-events-none select-none">
+              <div className="flex flex-col items-center gap-3 pointer-events-none select-none">
               <div className="w-14 h-14 rounded-2xl bg-[#2C2416] flex items-center justify-center">
                 <Camera className="w-7 h-7 text-[#C9A96E]" strokeWidth={1.5} />
               </div>
               <div className="text-center">
-                <p className="text-[#F8F4EE] text-sm font-medium mb-0.5">写真を選ぶ</p>
-                <p className="text-[#6B6055] text-xs">タップまたはドロップ</p>
+                <p className="text-[#F5EED8] text-sm font-medium mb-0.5">写真を選ぶ</p>
+                <p className="text-[#C8B89A] text-xs">タップまたはドロップ</p>
               </div>
             </div>
           </label>
