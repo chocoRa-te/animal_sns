@@ -17,6 +17,7 @@ interface PinCardProps {
   pinId: string;
   isOwner?: boolean;
   userId?: string;
+  darkMode?: boolean;        // when rendered on the dark today-zone
 }
 
 /* ─────────────────────────────────────────────────────
@@ -33,6 +34,7 @@ export function MemoryCard({
   pinId,
   isOwner = false,
   userId,
+  darkMode = false,
 }: PinCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -184,7 +186,7 @@ export function MemoryCard({
           <button
             onClick={(e) => { e.stopPropagation(); if (userId) router.push(`/users/${userId}`); }}
             aria-label={`${username}のページ`}
-            className="text-[10px] text-[#C8BEB3] hover:text-[#A89E93] transition-colors truncate leading-tight"
+            className={`text-[10px] transition-colors truncate leading-tight ${darkMode ? "text-[#A89E93] hover:text-[#6B6055]" : "text-[#C8BEB3] hover:text-[#A89E93]"}`}
           >
             {username}
           </button>
@@ -198,12 +200,14 @@ export function MemoryCard({
               className={`h-3 w-3 transition-all ${likeAnimating ? "animate-heart-pop" : ""} ${
                 liked
                   ? "text-[#C4856A] fill-[#C4856A]"
+                  : darkMode
+                  ? "text-[#A89E93] group-hover/heart:text-[#C4856A]"
                   : "text-[#C8BEB3] group-hover/heart:text-[#C4856A]"
               }`}
               strokeWidth={liked ? 0 : 1.5}
             />
             {likeCount > 0 && (
-              <span className={`text-[10px] tabular-nums leading-tight ${liked ? "text-[#C4856A]" : "text-[#C8BEB3]"}`}>
+              <span className={`text-[10px] tabular-nums leading-tight ${liked ? "text-[#C4856A]" : darkMode ? "text-[#A89E93]" : "text-[#C8BEB3]"}`}>
                 {likeCount}
               </span>
             )}
@@ -216,7 +220,7 @@ export function MemoryCard({
             {tagList.map((tag) => (
               <span
                 key={tag}
-                className="text-[9px] text-[#A89E93] bg-[#F2EBE0] px-1.5 py-0.5 rounded-sm"
+                className={`text-[9px] px-1.5 py-0.5 rounded-sm ${darkMode ? "text-[#A89E93] bg-[#2C2416]" : "text-[#A89E93] bg-[#F2EBE0]"}`}
               >
                 #{tag}
               </span>

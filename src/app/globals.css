@@ -92,6 +92,83 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
+   Today zone — the living present
+   Dark velvet warmth. This is "now."
+═══════════════════════════════════════════════════════ */
+
+.today-zone {
+  background-color: #1C1611;
+  background-image:
+    /* Grain texture via SVG noise */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  border-bottom: 1px solid rgba(201, 169, 110, 0.2);
+}
+
+.today-texture {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201, 169, 110, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* The primary CTA — generous, tactile, unmissable */
+.today-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #C9A96E;
+  border-radius: 16px;
+  padding: 14px 16px 14px 14px;
+  transition: background 0.15s ease, transform 0.15s ease;
+  text-decoration: none;
+  gap: 12px;
+}
+
+.today-cta:hover {
+  background: #D4B47D;
+  transform: translateY(-1px);
+}
+
+.today-cta:active {
+  transform: translateY(0px);
+}
+
+.today-cta-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.today-cta-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  background: rgba(28, 22, 17, 0.12);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.today-cta-arrow {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.today-cta:hover .today-cta-arrow {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+/* Past zone */
+.past-zone {
+  background-color: #F8F4EE;
+}
+
+/* ═══════════════════════════════════════════════════════
    Journal timeline layout
 ═══════════════════════════════════════════════════════ */
 
