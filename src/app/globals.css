@@ -1,75 +1,68 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────
-   Design Tokens — memoPaw
-   Metaphor: a handmade Japanese photo album.
-   Warm parchment pages, pressed-flower accents,
-   golden afternoon light, unhurried & personal.
-───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   memoPaw — Design System
+   Concept: A handwritten diary kept for your pet.
+   The interface should feel like turning the pages of
+   something physical — cream paper, faded photographs,
+   ink that's dried slowly. Unhurried. Personal.
+═══════════════════════════════════════════════════════ */
+
 :root {
-  /* Surfaces */
-  --background:     #F5F0E8;   /* aged parchment */
-  --surface:        #FDFAF4;   /* cream page */
-  --surface-raised: #FFFFFF;
-  --surface-muted:  #EDE8DC;   /* slightly deeper parchment */
+  /* ── Paper surfaces ── */
+  --paper:          #F8F4EE;   /* aged cream stock */
+  --paper-warm:     #F2EBE0;   /* slightly amber — like sun-touched pages */
+  --paper-deep:     #E8DFCF;   /* turned-corner shadow */
+  --paper-ink:      #1C1611;   /* near-black warm ink */
 
-  /* Borders */
-  --border:         #DDD5C4;
-  --border-strong:  #BFB39E;
+  /* ── Ink hierarchy ── */
+  --ink-primary:    #1C1611;
+  --ink-secondary:  #6B6055;
+  --ink-muted:      #A89E93;
+  --ink-ghost:      #C8BEB3;
+  --ink-on-dark:    #F8F4EE;
 
-  /* Text */
-  --text-primary:   #2C2416;   /* warm deep brown, not pure black */
-  --text-secondary: #7A6E5F;
-  --text-muted:     #AFA495;
-  --text-on-dark:   #F5F0E8;
-
-  /* Accent — warm gold, like afternoon sun */
-  --accent:         #2C2416;
-  --accent-hover:   #483C2A;
+  /* ── Accent — dried-rose / warm amber gold ── */
+  --rose:           #C4856A;   /* terracotta warmth */
+  --rose-light:     #EAD5C8;
   --gold:           #C9A96E;
-  --gold-light:     #E8D5A8;
-  --gold-deep:      #A07C3A;
+  --gold-deep:      #9A7A3F;
 
-  /* Sidebar width */
-  --sidebar-w: 220px;
-  --sidebar-w-collapsed: 64px;
+  /* ── Sidebar ── */
+  --sidebar-w:      68px;      /* Minimal — just a spine */
+
+  /* ── Binding line ── */
+  --binding:        #DDD4C6;
 }
 
-/* ─────────────────────────────────────────────
-   Tailwind v4 Theme
-───────────────────────────────────────────── */
+/* ── Tailwind v4 theme ── */
 @theme inline {
-  --color-background:     #F5F0E8;
-  --color-surface:        #FDFAF4;
-  --color-surface-raised: #FFFFFF;
-  --color-surface-muted:  #EDE8DC;
-  --color-border-base:    #DDD5C4;
-  --color-border-strong:  #BFB39E;
-  --color-text-primary:   #2C2416;
-  --color-text-secondary: #7A6E5F;
-  --color-text-muted:     #AFA495;
-  --color-text-on-dark:   #F5F0E8;
-  --color-accent:         #2C2416;
-  --color-accent-hover:   #483C2A;
+  --color-paper:          #F8F4EE;
+  --color-paper-warm:     #F2EBE0;
+  --color-paper-deep:     #E8DFCF;
+  --color-ink:            #1C1611;
+  --color-ink-secondary:  #6B6055;
+  --color-ink-muted:      #A89E93;
+  --color-ink-ghost:      #C8BEB3;
+  --color-ink-on-dark:    #F8F4EE;
+  --color-rose:           #C4856A;
+  --color-rose-light:     #EAD5C8;
   --color-gold:           #C9A96E;
-  --color-gold-light:     #E8D5A8;
-  --color-gold-deep:      #A07C3A;
+  --color-gold-deep:      #9A7A3F;
+  --color-binding:        #DDD4C6;
 
-  /* Fonts */
-  --font-sans:  var(--font-inter),  -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
-  --font-serif: var(--font-lora),   'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', Georgia, serif;
+  --font-sans:  var(--font-inter),   'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
+  --font-serif: var(--font-lora),    'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', Georgia, serif;
 }
 
-/* ─────────────────────────────────────────────
-   Base
-───────────────────────────────────────────── */
+/* ── Base ── */
 html {
-  background-color: var(--background);
+  background-color: var(--paper);
 }
 
 body {
-  background-color: var(--background);
-  color: var(--text-primary);
+  background-color: var(--paper);
+  color: var(--ink-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -79,9 +72,7 @@ body {
   box-sizing: border-box;
 }
 
-/* ─────────────────────────────────────────────
-   App shell — sidebar layout
-───────────────────────────────────────────── */
+/* ── App shell ── */
 .app-shell {
   display: flex;
   min-height: 100dvh;
@@ -93,101 +84,125 @@ body {
   margin-left: var(--sidebar-w);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .app-main {
     margin-left: 0;
-    margin-bottom: 64px; /* bottom nav on mobile */
+    padding-bottom: 72px;
   }
 }
 
-/* ─────────────────────────────────────────────
-   Masonry Grid (react-masonry-css)
-───────────────────────────────────────────── */
-.masonry-grid {
-  display: flex;
-  margin-left: -10px;
-  width: auto;
+/* ═══════════════════════════════════════════════════════
+   Journal timeline layout
+═══════════════════════════════════════════════════════ */
+
+/* The vertical binding line — runs down the left of the journal */
+.journal-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--binding) 8%,
+    var(--binding) 92%,
+    transparent
+  );
 }
 
-.masonry-grid_column {
-  padding-left: 10px;
-  background-clip: padding-box;
+/* Day entry — one "page opening" in the diary */
+.day-entry {
+  position: relative;
+  padding-left: 28px;
 }
 
-.masonry-grid_column > div {
-  margin-bottom: 10px;
+/* The date bullet on the binding line */
+.day-dot {
+  position: absolute;
+  left: -4px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1.5px solid var(--binding);
 }
 
-/* ─────────────────────────────────────────────
+.day-dot--today {
+  background: var(--rose);
+  border-color: var(--rose);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Photo print — looks like a physical photograph
+═══════════════════════════════════════════════════════ */
+.photo-print {
+  background: #FFFFFF;
+  padding: 6px 6px 24px 6px;
+  box-shadow:
+    0 1px 3px rgba(28, 22, 17, 0.08),
+    0 4px 12px rgba(28, 22, 17, 0.06),
+    0 0 0 0.5px rgba(28, 22, 17, 0.04);
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transform-origin: center bottom;
+}
+
+.photo-print:hover {
+  transform: scale(1.018) rotate(0.4deg);
+  box-shadow:
+    0 8px 24px rgba(28, 22, 17, 0.12),
+    0 2px 6px rgba(28, 22, 17, 0.08),
+    0 0 0 0.5px rgba(28, 22, 17, 0.04);
+}
+
+/* Alternate slight rotation for visual rhythm */
+.photo-print:nth-child(even) {
+  transform-origin: center bottom;
+}
+
+.photo-print:nth-child(even):hover {
+  transform: scale(1.018) rotate(-0.4deg);
+}
+
+/* ═══════════════════════════════════════════════════════
    Utilities
-───────────────────────────────────────────── */
+═══════════════════════════════════════════════════════ */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
 
-/* Parchment paper texture — subtle noise overlay */
-.texture-paper::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  border-radius: inherit;
-  z-index: 0;
-}
+.font-serif { font-family: var(--font-serif); }
 
-/* Film border — the white border around "photos" */
-.photo-frame {
-  padding: 8px 8px 28px 8px;
-  background: #FFFFFF;
-  box-shadow:
-    0 1px 2px rgba(44,36,22,0.06),
-    0 4px 16px rgba(44,36,22,0.06),
-    0 0 0 1px rgba(44,36,22,0.06);
-}
-
-/* ─────────────────────────────────────────────
+/* ═══════════════════════════════════════════════════════
    Animations
-───────────────────────────────────────────── */
+═══════════════════════════════════════════════════════ */
 @keyframes heartPop {
-  0%   { transform: scale(0.8); }
-  50%  { transform: scale(1.35); }
+  0%   { transform: scale(0.75); }
+  55%  { transform: scale(1.4); }
   100% { transform: scale(1); }
 }
-.animate-heart-pop {
-  animation: heartPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+.animate-heart-pop { animation: heartPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-up {
-  animation: fadeUp 0.22s ease-out forwards;
-}
+.animate-fade-up { animation: fadeUp 0.22s ease-out forwards; }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-.animate-fade-in {
-  animation: fadeIn 0.18s ease-out forwards;
-}
+.animate-fade-in { animation: fadeIn 0.18s ease-out forwards; }
 
-/* ─────────────────────────────────────────────
-   Serif headings helper
-───────────────────────────────────────────── */
-.font-serif {
-  font-family: var(--font-serif);
-}
-
-/* Focus ring — warm gold instead of blue */
+/* ── Focus ring — warm rose instead of blue ── */
 *:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--rose);
   outline-offset: 2px;
   border-radius: 4px;
 }

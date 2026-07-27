@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F5F0E8",
+  themeColor: "#F8F4EE",
   width: "device-width",
   initialScale: 1,
 };
@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" suppressHydrationWarning className="bg-background">
+    <html lang="ja" suppressHydrationWarning className="bg-paper">
       <body className={`${inter.variable} ${lora.variable} font-sans antialiased`}>
         <SessionProvider>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">

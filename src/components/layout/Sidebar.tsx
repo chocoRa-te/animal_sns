@@ -8,25 +8,15 @@ import {
   Bell,
   MessageCircle,
   BookImage,
-  Video,
   Camera,
   Settings,
   LogOut,
-  UserCheck,
   PawPrint,
-  Plus,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
-interface NavItem {
-  href: string;
-  icon: React.ElementType;
-  label: string;
-  badge?: number;
-}
-
-function SidebarLink({
+function SpineIcon({
   href,
   icon: Icon,
   label,
@@ -42,25 +32,25 @@ function SidebarLink({
   onClick?: () => void;
 }) {
   const base =
-    "relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group w-full text-left";
+    "relative flex items-center justify-center h-11 w-11 rounded-2xl transition-all duration-150 group";
   const state = active
-    ? "bg-[#2C2416] text-[#F5F0E8]"
-    : "text-[#7A6E5F] hover:bg-[#EDE8DC] hover:text-[#2C2416]";
+    ? "bg-[#1C1611] text-[#F8F4EE]"
+    : "text-[#A89E93] hover:bg-[#E8DFCF] hover:text-[#1C1611]";
 
   const inner = (
     <>
-      <span className="relative flex-shrink-0">
-        <Icon
-          className={`h-[18px] w-[18px] transition-transform group-hover:scale-105 ${active ? "text-[#C9A96E]" : ""}`}
-          strokeWidth={active ? 2 : 1.75}
+      <Icon
+        className={`h-[19px] w-[19px] transition-transform group-hover:scale-110 ${active ? "text-[#C9A96E]" : ""}`}
+        strokeWidth={active ? 2 : 1.6}
+      />
+      {badge != null && badge > 0 && (
+        <span
+          className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#C4856A]"
+          aria-label={`${badge}件の未読`}
         />
-        {badge && badge > 0 ? (
-          <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-[#C9A96E] text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
-            {badge > 9 ? "9+" : badge}
-          </span>
-        ) : null}
-      </span>
-      <span className={`text-sm font-medium tracking-tight transition-opacity ${active ? "text-[#F5F0E8]" : ""}`}>
+      )}
+      {/* Tooltip */}
+      <span className="pointer-events-none absolute left-full ml-3 px-2.5 py-1 bg-[#1C1611] text-[#F8F4EE] text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-50 shadow-lg">
         {label}
       </span>
     </>
@@ -86,12 +76,12 @@ export function Sidebar() {
   const pathname = usePathname();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
     if (!session?.user?.id) return;
+    const uid = session.user.id;
 
-    fetch(`/api/notifications?userId=${session.user.id}`)
+    fetch(`/api/notifications?userId=${uid}`)
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -99,110 +89,86 @@ export function Sidebar() {
         }
       });
 
-    fetch(`/api/chat?userId=${session.user.id}&unreadOnly=true`)
+    fetch(`/api/chat?userId=${uid}&unreadOnly=true`)
       .then((r) => r.json())
       .then((data) => setUnreadMessages(data.count ?? 0));
-
-    fetch(`/api/follow/requests?userId=${session.user.id}`)
-      .then((r) => r.json())
-      .then((data) => setPendingRequests(Array.isArray(data) ? data.length : 0));
   }, [session]);
 
   const is = (path: string) => pathname === path;
+  const starts = (path: string) => pathname.startsWith(path);
 
   return (
     <>
-      {/* ── Desktop sidebar ────────────────────── */}
+      {/* ── Desktop spine sidebar ─────────────── */}
       <aside
-        className="hidden md:flex fixed left-0 top-0 bottom-0 flex-col bg-[#FDFAF4] border-r border-[#DDD5C4] z-50"
+        className="hidden md:flex fixed left-0 top-0 bottom-0 flex-col items-center bg-[#F2EBE0] border-r border-[#DDD4C6] z-50 py-4 gap-1"
         style={{ width: "var(--sidebar-w)" }}
-        aria-label="サイドナビゲーション"
+        aria-label="ナビゲーション"
       >
-        {/* Brand */}
+        {/* Logo — just a paw mark */}
         <Link
           href="/"
-          className="flex items-center gap-2.5 px-4 py-5 group"
-          aria-label="memoPaw ホームへ"
+          className="flex items-center justify-center h-11 w-11 mb-3 group"
+          aria-label="memoPaw ホーム"
         >
           <PawPrint
-            className="h-6 w-6 text-[#C9A96E] transition-transform group-hover:rotate-6"
+            className="h-6 w-6 text-[#C9A96E] transition-transform group-hover:scale-110 group-hover:rotate-6 duration-200"
             strokeWidth={1.75}
           />
-          <div className="flex flex-col leading-none">
-            <span className="font-serif text-lg font-semibold text-[#2C2416] tracking-tight">
-              memoPaw
-            </span>
-            <span className="text-[10px] text-[#AFA495] tracking-wide mt-0.5">
-              思い出帳
-            </span>
-          </div>
         </Link>
 
-        {/* Divider */}
-        <div className="mx-4 h-px bg-[#DDD5C4] mb-3" />
-
         {/* Primary nav */}
-        <nav className="flex flex-col gap-0.5 px-3 flex-1" aria-label="メインメニュー">
-          <SidebarLink href="/"          icon={Home}         label="ホーム"      active={is("/")} />
-          <SidebarLink href="/search"    icon={Search}       label="さがす"      active={is("/search")} />
-          <SidebarLink href="/album"     icon={BookImage}    label="アルバム"    active={pathname.startsWith("/album")} />
-          <SidebarLink href="/video"     icon={Video}        label="動画"        active={pathname.startsWith("/video")} />
-          <SidebarLink
+        <nav className="flex flex-col items-center gap-1 flex-1" aria-label="メインナビ">
+          <SpineIcon href="/"             icon={Home}         label="ホーム"         active={is("/")} />
+          <SpineIcon href="/search"       icon={Search}       label="さがす"         active={is("/search")} />
+          <SpineIcon href="/album"        icon={BookImage}    label="アルバム"       active={starts("/album")} />
+          <SpineIcon
             href="/notifications"
             icon={Bell}
             label="通知"
             active={is("/notifications")}
             badge={unreadNotifications}
           />
-          <SidebarLink
+          <SpineIcon
             href="/chat"
             icon={MessageCircle}
             label="メッセージ"
-            active={pathname.startsWith("/chat")}
+            active={starts("/chat")}
             badge={unreadMessages}
           />
 
-          {/* Memory CTA — the heart of the app */}
-          <div className="mt-4">
+          {/* Create — the most important action */}
+          <div className="mt-3 mb-1">
             <Link
               href="/create"
-              className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl bg-[#2C2416] text-[#F5F0E8] hover:bg-[#483C2A] transition-colors group"
               aria-label="今日の思い出を残す"
+              className="flex items-center justify-center h-11 w-11 rounded-2xl bg-[#1C1611] hover:bg-[#3A2E22] transition-colors group"
             >
               <Camera
-                className="h-[18px] w-[18px] text-[#C9A96E] flex-shrink-0 transition-transform group-hover:scale-105"
+                className="h-5 w-5 text-[#C9A96E] transition-transform group-hover:scale-110 duration-150"
                 strokeWidth={1.75}
               />
-              <span className="text-sm font-medium">今日の思い出を残す</span>
+              <span className="sr-only">今日の思い出を残す</span>
             </Link>
           </div>
         </nav>
 
-        {/* Bottom section — profile + settings */}
-        <div className="px-3 pb-4 flex flex-col gap-0.5 border-t border-[#DDD5C4] pt-3">
+        {/* Bottom — profile, settings */}
+        <div className="flex flex-col items-center gap-1 pb-1">
+          <SpineIcon href="/settings" icon={Settings} label="設定" active={is("/settings")} />
+
           {session ? (
             <>
-              <SidebarLink href="/profile"  icon={UserCheck}   label="マイページ" active={pathname.startsWith("/profile")} badge={pendingRequests} />
-              <SidebarLink href="/settings" icon={Settings}    label="設定"       active={is("/settings")} />
-              <SidebarLink
+              <SpineIcon
                 icon={LogOut}
                 label="ログアウト"
                 onClick={() => signOut({ callbackUrl: "/login" })}
               />
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#2C2416] text-[#F5F0E8] hover:bg-[#483C2A] transition-colors text-sm font-medium"
-            >
-              ログイン
-            </Link>
-          )}
-
-          {/* User chip */}
-          {session && (
-            <Link href="/profile" className="flex items-center gap-2.5 px-3 py-2.5 mt-1 rounded-xl hover:bg-[#EDE8DC] transition-colors">
-              <div className="h-7 w-7 rounded-full bg-[#2C2416] flex items-center justify-center text-[#F5F0E8] text-xs font-semibold overflow-hidden flex-shrink-0">
+              <Link
+                href="/profile"
+                aria-label={`${session.user?.name ?? "マイページ"}のプロフィール`}
+                className="mt-1 h-9 w-9 rounded-full overflow-hidden border-2 border-[#DDD4C6] hover:border-[#C9A96E] transition-colors"
+              >
                 {session.user?.image ? (
                   <img
                     src={session.user.image}
@@ -210,81 +176,67 @@ export function Sidebar() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  session.user?.name?.[0]?.toUpperCase() ?? "U"
+                  <div className="w-full h-full bg-[#1C1611] flex items-center justify-center text-[#F8F4EE] text-xs font-semibold">
+                    {session.user?.name?.[0]?.toUpperCase() ?? "U"}
+                  </div>
                 )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-[#2C2416] truncate leading-tight">
-                  {session.user?.name}
-                </p>
-                <p className="text-[10px] text-[#AFA495] truncate leading-tight">
-                  {session.user?.email}
-                </p>
-              </div>
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              aria-label="ログイン"
+              className="h-9 w-9 rounded-full bg-[#1C1611] flex items-center justify-center text-[#F8F4EE] text-xs font-medium hover:bg-[#3A2E22] transition-colors"
+            >
+              入
             </Link>
           )}
         </div>
       </aside>
 
-      {/* ── Mobile bottom navigation ────────────── */}
+      {/* ── Mobile bottom nav ─────────────────── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-[#FDFAF4] border-t border-[#DDD5C4] z-50 flex items-center justify-around px-2 h-16"
-        aria-label="モバイルナビゲーション"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-[#F2EBE0] border-t border-[#DDD4C6] z-50 flex items-center justify-around px-3 h-[64px]"
+        aria-label="モバイルナビ"
       >
-        <Link
-          href="/"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${is("/") ? "text-[#2C2416]" : "text-[#AFA495]"}`}
-          aria-label="ホーム"
-        >
-          <Home className={`h-5 w-5 ${is("/") ? "stroke-[2]" : "stroke-[1.5]"}`} />
-          <span className="text-[10px] font-medium">ホーム</span>
+        <Link href="/" aria-label="ホーム" className={`flex flex-col items-center gap-1 transition-colors ${is("/") ? "text-[#1C1611]" : "text-[#A89E93]"}`}>
+          <Home className="h-5 w-5" strokeWidth={is("/") ? 2 : 1.5} />
+          <span className="text-[9px] font-medium">ホーム</span>
         </Link>
-        <Link
-          href="/search"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${is("/search") ? "text-[#2C2416]" : "text-[#AFA495]"}`}
-          aria-label="さがす"
-        >
-          <Search className={`h-5 w-5 ${is("/search") ? "stroke-[2]" : "stroke-[1.5]"}`} />
-          <span className="text-[10px] font-medium">さがす</span>
+        <Link href="/search" aria-label="さがす" className={`flex flex-col items-center gap-1 transition-colors ${is("/search") ? "text-[#1C1611]" : "text-[#A89E93]"}`}>
+          <Search className="h-5 w-5" strokeWidth={is("/search") ? 2 : 1.5} />
+          <span className="text-[9px] font-medium">さがす</span>
         </Link>
 
-        {/* Center create button */}
+        {/* Center create — raised camera button */}
         <Link
           href="/create"
-          className="flex flex-col items-center gap-0.5 -mt-5"
           aria-label="今日の思い出を残す"
+          className="flex flex-col items-center gap-1 -mt-6"
         >
-          <div className="h-12 w-12 rounded-full bg-[#2C2416] flex items-center justify-center shadow-lg hover:bg-[#483C2A] transition-colors">
-            <Camera className="h-5 w-5 text-[#C9A96E]" strokeWidth={1.75} />
+          <div className="h-14 w-14 rounded-full bg-[#1C1611] flex items-center justify-center shadow-lg hover:bg-[#3A2E22] transition-colors border-4 border-[#F2EBE0]">
+            <Camera className="h-6 w-6 text-[#C9A96E]" strokeWidth={1.75} />
           </div>
         </Link>
 
-        <Link
-          href="/notifications"
-          className={`relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${is("/notifications") ? "text-[#2C2416]" : "text-[#AFA495]"}`}
-          aria-label="通知"
-        >
+        <Link href="/notifications" aria-label="通知" className={`relative flex flex-col items-center gap-1 transition-colors ${is("/notifications") ? "text-[#1C1611]" : "text-[#A89E93]"}`}>
           <span className="relative">
-            <Bell className={`h-5 w-5 ${is("/notifications") ? "stroke-[2]" : "stroke-[1.5]"}`} />
+            <Bell className="h-5 w-5" strokeWidth={is("/notifications") ? 2 : 1.5} />
             {unreadNotifications > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-[#C9A96E] rounded-full border border-[#FDFAF4]" />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-[#C4856A] rounded-full" />
             )}
           </span>
-          <span className="text-[10px] font-medium">通知</span>
+          <span className="text-[9px] font-medium">通知</span>
         </Link>
-        <Link
-          href="/profile"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors ${pathname.startsWith("/profile") ? "text-[#2C2416]" : "text-[#AFA495]"}`}
-          aria-label="マイページ"
-        >
-          <div className="h-5 w-5 rounded-full bg-[#2C2416] flex items-center justify-center text-[#F5F0E8] text-[9px] font-semibold overflow-hidden">
-            {session?.user?.image ? (
-              <img src={session.user.image} alt="" className="w-full h-full object-cover" />
-            ) : (
-              session?.user?.name?.[0]?.toUpperCase() ?? "U"
-            )}
+
+        <Link href="/profile" aria-label="マイページ" className={`flex flex-col items-center gap-1 transition-colors ${starts("/profile") ? "text-[#1C1611]" : "text-[#A89E93]"}`}>
+          <div className="h-5 w-5 rounded-full bg-[#1C1611] overflow-hidden flex items-center justify-center text-[#F8F4EE] text-[9px] font-semibold">
+            {session?.user?.image
+              ? <img src={session.user.image} alt="" className="w-full h-full object-cover" />
+              : session?.user?.name?.[0]?.toUpperCase() ?? "U"
+            }
           </div>
-          <span className="text-[10px] font-medium">マイページ</span>
+          <span className="text-[9px] font-medium">マイページ</span>
         </Link>
       </nav>
     </>

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { PinCard } from "@/components/pins/PinCard";
+import { MemoryCard } from "@/components/pins/PinCard";
 import { useSession } from "next-auth/react";
-import Masonry from "react-masonry-css";
 import { Camera, PawPrint } from "lucide-react";
 import Link from "next/link";
 
@@ -13,57 +12,67 @@ interface Pin {
   imageUrl: string;
   title: string;
   username: string;
-  category: string;
   userId: string;
+  category: string;
   tags?: string;
   createdAt?: string;
 }
 
-const PET_TAGS = [
-  { label: "すべて", value: "すべて" },
-  { label: "散歩",   value: "散歩" },
-  { label: "ごはん", value: "ごはん" },
-  { label: "お昼寝", value: "お昼寝" },
-  { label: "遊び",   value: "遊び" },
-  { label: "成長記録", value: "成長記録" },
-  { label: "お出かけ", value: "お出かけ" },
-  { label: "病院",   value: "病院" },
-];
+// Group pins by calendar date
+function groupByDate(pins: Pin[]): { dateKey: string; label: string; relLabel: string; pins: Pin[] }[] {
+  const map = new Map<string, Pin[]>();
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const yesterdayKey = yesterday.toISOString().slice(0, 10);
 
-const MASONRY_COLS = { default: 3, 1280: 3, 1024: 3, 768: 2, 640: 2 };
+  for (const pin of pins) {
+    const raw = pin.createdAt ? new Date(pin.createdAt) : new Date();
+    const key = raw.toISOString().slice(0, 10);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(pin);
+  }
 
-// Format today's date in Japanese
-function todayLabel(): string {
-  const d = new Date();
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  return Array.from(map.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([key, dayPins]) => {
+      const d = new Date(key + "T12:00:00");
+      const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+      const label = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekdays[d.getDay()]}）`;
+      const relLabel = key === todayKey ? "今日" : key === yesterdayKey ? "昨日" : "";
+      return { dateKey: key, label, relLabel, pins: dayPins };
+    });
 }
+
+const FILTER_TAGS = ["散歩", "ごはん", "お昼寝", "遊び", "成長記録", "お出かけ", "病院", "お風呂"];
 
 export default function Home() {
   const { data: session } = useSession();
   const [pins, setPins] = useState<Pin[]>([]);
-  const [selected, setSelected] = useState("すべて");
+  const [loading, setLoading] = useState(true);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<"all" | "following">("all");
   const [followingIds, setFollowingIds] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
     fetch("/api/pins?type=image")
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: any[]) =>
         setPins(
-          data.map((pin: any) => ({
-            id: pin.id,
-            imageUrl: pin.imageUrl,
-            title: pin.title,
-            username: pin.user?.name ?? "unknown",
-            category: pin.category ?? "",
-            userId: pin.userId,
-            tags: pin.category ?? "",
-            createdAt: pin.createdAt,
+          data.map((p) => ({
+            id: p.id,
+            imageUrl: p.imageUrl,
+            title: p.title,
+            username: p.user?.name ?? "unknown",
+            userId: p.userId,
+            category: p.category ?? "",
+            tags: p.category ?? "",
+            createdAt: p.createdAt,
           }))
-        );
-      })
+        )
+      )
       .finally(() => setLoading(false));
   }, []);
 
@@ -74,51 +83,59 @@ export default function Home() {
       .then((data) => setFollowingIds(data.followingIds ?? []));
   }, [session]);
 
-  const filtered = pins.filter((pin) => {
-    const tagMatch =
-      selected === "すべて" ||
-      (pin.category || "").split(",").map((t) => t.trim()).includes(selected);
-    const timelineMatch =
-      timeline === "all" || followingIds.includes(pin.userId);
-    return tagMatch && timelineMatch;
-  });
+  const filtered = useMemo(() => {
+    return pins.filter((pin) => {
+      const tagOk =
+        !activeTag ||
+        (pin.category || "").split(",").map((t) => t.trim()).includes(activeTag);
+      const timelineOk =
+        timeline === "all" || followingIds.includes(pin.userId);
+      return tagOk && timelineOk;
+    });
+  }, [pins, activeTag, timeline, followingIds]);
+
+  const grouped = useMemo(() => groupByDate(filtered), [filtered]);
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  const isToday = (key: string) => key === todayKey;
 
   return (
     <div className="app-shell">
       <Sidebar />
 
-      <main className="app-main min-h-screen bg-[#F5F0E8]">
-        {/* ── Page header ───────────────────────── */}
-        <header className="px-6 pt-8 pb-4">
-          <div className="flex items-end justify-between gap-4 max-w-4xl">
+      <main className="app-main min-h-screen bg-[#F8F4EE]">
+
+        {/* ── Masthead ───────────────────────────────── */}
+        <header className="px-8 pt-10 pb-2 max-w-3xl">
+
+          {/* Timeline toggle */}
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="text-xs text-[#AFA495] tracking-widest uppercase mb-1 font-medium">
-                {todayLabel()}
-              </p>
-              <h1 className="font-serif text-3xl font-semibold text-[#2C2416] leading-tight">
-                {timeline === "following" && session
-                  ? "みんなの思い出"
-                  : "今日の思い出"}
+              <h1 className="font-serif text-[28px] font-semibold text-[#1C1611] leading-tight tracking-tight">
+                思い出帳
               </h1>
+              <p className="text-[13px] text-[#A89E93] mt-0.5">
+                {today.getFullYear()}年{today.getMonth() + 1}月
+              </p>
             </div>
-            {/* Timeline toggle — understated pill pair */}
-            <div className="flex items-center gap-1 bg-[#EDE8DC] rounded-full p-0.5 flex-shrink-0">
+
+            <div className="flex items-center gap-1 bg-[#E8DFCF] rounded-full p-0.5">
               <button
                 onClick={() => setTimeline("all")}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                   timeline === "all"
-                    ? "bg-[#2C2416] text-[#F5F0E8] shadow-sm"
-                    : "text-[#7A6E5F] hover:text-[#2C2416]"
+                    ? "bg-[#1C1611] text-[#F8F4EE] shadow-sm"
+                    : "text-[#A89E93] hover:text-[#1C1611]"
                 }`}
               >
                 すべて
               </button>
               <button
                 onClick={() => setTimeline("following")}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
                   timeline === "following"
-                    ? "bg-[#2C2416] text-[#F5F0E8] shadow-sm"
-                    : "text-[#7A6E5F] hover:text-[#2C2416]"
+                    ? "bg-[#1C1611] text-[#F8F4EE] shadow-sm"
+                    : "text-[#A89E93] hover:text-[#1C1611]"
                 }`}
               >
                 フォロー中
@@ -126,39 +143,55 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Tag filter bar */}
-          <div className="flex gap-2 flex-nowrap overflow-x-auto scrollbar-hide mt-4 pb-0.5 max-w-4xl">
-            {PET_TAGS.map((tag) => (
+          {/* Tag filter — horizontal scrollable */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              onClick={() => setActiveTag(null)}
+              className={`flex-shrink-0 px-3.5 py-1.5 text-[11px] font-medium rounded-full border transition-all ${
+                !activeTag
+                  ? "bg-[#1C1611] text-[#F8F4EE] border-[#1C1611]"
+                  : "border-[#DDD4C6] text-[#A89E93] hover:border-[#A89E93] hover:text-[#1C1611]"
+              }`}
+            >
+              すべて
+            </button>
+            {FILTER_TAGS.map((tag) => (
               <button
-                key={tag.value}
-                onClick={() => setSelected(tag.value)}
-                className={`px-3.5 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-all border ${
-                  selected === tag.value
-                    ? "bg-[#2C2416] text-[#F5F0E8] border-[#2C2416]"
-                    : "bg-transparent text-[#7A6E5F] border-[#DDD5C4] hover:border-[#BFB39E] hover:text-[#2C2416]"
+                key={tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={`flex-shrink-0 px-3.5 py-1.5 text-[11px] font-medium rounded-full border transition-all ${
+                  activeTag === tag
+                    ? "bg-[#1C1611] text-[#F8F4EE] border-[#1C1611]"
+                    : "border-[#DDD4C6] text-[#A89E93] hover:border-[#A89E93] hover:text-[#1C1611]"
                 }`}
               >
-                {tag.value === "すべて" ? "すべて" : `#${tag.label}`}
+                #{tag}
               </button>
             ))}
           </div>
         </header>
 
-        {/* ── Divider rule */}
-        <div className="mx-6 h-px bg-[#DDD5C4] mb-6 max-w-4xl" />
+        {/* ── Journal body ──────────────────────────── */}
+        <div className="px-8 pb-16 max-w-3xl">
 
-        {/* ── Content area ─────────────────────── */}
-        <section className="px-6 pb-12 max-w-4xl" aria-label="思い出一覧">
+          {/* Thin rule under masthead */}
+          <div className="h-px bg-[#DDD4C6] mt-5 mb-8" />
 
-          {/* Skeleton loading */}
+          {/* Loading */}
           {loading && (
-            <div className="masonry-grid" style={{ display: "flex", marginLeft: "-10px" }}>
-              {[...Array(6)].map((_, i) => (
-                <div key={i} style={{ paddingLeft: "10px", flex: "0 0 33.3333%" }}>
-                  <div
-                    className="w-full rounded-2xl bg-[#EDE8DC] animate-pulse mb-2.5"
-                    style={{ height: `${180 + (i % 3) * 60}px` }}
-                  />
+            <div className="flex flex-col gap-10">
+              {[1, 2].map((i) => (
+                <div key={i}>
+                  <div className="h-4 w-28 bg-[#E8DFCF] rounded animate-pulse mb-4" />
+                  <div className="flex gap-3 overflow-hidden">
+                    {[1, 2, 3].map((j) => (
+                      <div
+                        key={j}
+                        className="flex-shrink-0 bg-[#E8DFCF] rounded animate-pulse"
+                        style={{ width: 180 + j * 20, height: 200 + j * 20 }}
+                      />
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -166,57 +199,98 @@ export default function Home() {
 
           {/* Empty state */}
           {!loading && filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-28 gap-5 text-center">
-              <div className="relative">
-                <div className="h-20 w-20 rounded-full bg-[#EDE8DC] flex items-center justify-center">
-                  <PawPrint className="h-8 w-8 text-[#BFB39E]" strokeWidth={1.5} />
-                </div>
-                {/* Decorative ring */}
-                <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#BFB39E] scale-110 opacity-40" />
+            <div className="flex flex-col items-center py-24 gap-6 text-center">
+              <div className="relative w-16 h-16">
+                <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#DDD4C6]" />
+                <div className="absolute inset-3 rounded-full border border-[#E8DFCF]" />
+                <PawPrint
+                  className="absolute inset-0 m-auto h-7 w-7 text-[#C8BEB3]"
+                  strokeWidth={1.25}
+                />
               </div>
               <div>
-                <p className="font-serif text-xl text-[#2C2416] mb-1.5">
+                <p className="font-serif text-[20px] text-[#1C1611] mb-2 leading-snug">
                   まだ思い出がありません
                 </p>
-                <p className="text-sm text-[#AFA495] leading-relaxed max-w-xs">
+                <p className="text-sm text-[#A89E93] leading-relaxed max-w-[260px]">
                   今日の一枚から始めましょう。<br />
                   写真は、やがて宝物になります。
                 </p>
               </div>
               <Link
                 href="/create"
-                className="mt-1 flex items-center gap-2 px-5 py-2.5 bg-[#2C2416] text-[#F5F0E8] text-sm font-medium rounded-full hover:bg-[#483C2A] transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1C1611] text-[#F8F4EE] text-[13px] font-medium rounded-full hover:bg-[#3A2E22] transition-colors"
               >
-                <Camera className="h-4 w-4 text-[#C9A96E]" strokeWidth={1.75} />
+                <Camera className="h-3.5 w-3.5 text-[#C9A96E]" strokeWidth={1.75} />
                 今日の思い出を残す
               </Link>
             </div>
           )}
 
-          {/* Memory grid */}
-          {!loading && filtered.length > 0 && (
-            <Masonry
-              breakpointCols={MASONRY_COLS}
-              className="masonry-grid"
-              columnClassName="masonry-grid_column"
-            >
-              {filtered.map((pin) => (
-                <div key={pin.id}>
-                  <PinCard
-                    imageUrl={pin.imageUrl}
-                    title={pin.title}
-                    username={pin.username}
-                    category={pin.category}
-                    pinId={pin.id}
-                    isOwner={session?.user?.id === pin.userId}
-                    userId={pin.userId}
-                    tags={pin.tags}
-                  />
-                </div>
-              ))}
-            </Masonry>
+          {/* ── Timeline ──────────────────────── */}
+          {!loading && grouped.length > 0 && (
+            <div className="relative">
+              {/* Vertical binding line */}
+              <div className="journal-line" />
+
+              <div className="flex flex-col gap-12">
+                {grouped.map(({ dateKey, label, relLabel, pins: dayPins }) => (
+                  <section
+                    key={dateKey}
+                    className="day-entry animate-fade-up"
+                    aria-label={label}
+                  >
+                    {/* Date bullet */}
+                    <div className={`day-dot ${isToday(dateKey) ? "day-dot--today" : ""}`} aria-hidden="true" />
+
+                    {/* Date heading */}
+                    <div className="flex items-baseline gap-2 mb-4">
+                      {relLabel && (
+                        <span className="font-serif text-[11px] font-medium text-[#C4856A] uppercase tracking-widest">
+                          {relLabel}
+                        </span>
+                      )}
+                      <time
+                        dateTime={dateKey}
+                        className={`font-serif text-[13px] ${relLabel ? "text-[#A89E93]" : "font-semibold text-[#1C1611]"}`}
+                      >
+                        {label}
+                      </time>
+                      <span className="text-[11px] text-[#C8BEB3]">
+                        {dayPins.length}枚
+                      </span>
+                    </div>
+
+                    {/* Photo strip — horizontal scroll */}
+                    <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                      {dayPins.map((pin, idx) => (
+                        <div
+                          key={pin.id}
+                          className="flex-shrink-0"
+                          style={{
+                            // Subtle natural rotation for visual warmth
+                            transform: `rotate(${idx % 3 === 0 ? -0.8 : idx % 3 === 1 ? 0.5 : -0.3}deg)`,
+                          }}
+                        >
+                          <MemoryCard
+                            pinId={pin.id}
+                            imageUrl={pin.imageUrl}
+                            title={pin.title}
+                            username={pin.username}
+                            userId={pin.userId}
+                            category={pin.category}
+                            isOwner={session?.user?.id === pin.userId}
+                            tags={pin.tags}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
           )}
-        </section>
+        </div>
       </main>
     </div>
   );
