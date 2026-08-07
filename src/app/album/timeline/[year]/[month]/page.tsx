@@ -28,6 +28,8 @@ export default function TimelineAlbumPage() {
   const [pageSize, setPageSize] = useState({ width: 300, height: 500 });
   const [leftOffset, setLeftOffset] = useState("calc(8vw + 8px - 1140px)");
   const [startPage, setStartPage] = useState(0);
+  // containerRef を追加
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const updateSize = () => {
@@ -35,29 +37,21 @@ export default function TimelineAlbumPage() {
       const h = window.innerHeight;
       const spineLeft = w * 0.08 + 8;
 
+      let pw: number;
       if (w < 768) {
-        setPageSize({
-          width: Math.floor(w * 0.9),
-          height: Math.floor(h - 160),
-        });
-        setLeftOffset("0px");
-        setStartPage(0);
+        pw = Math.floor(w * 0.9);
       } else if (w < 1280) {
-        setPageSize({
-          width: Math.floor(Math.min(w - spineLeft, h * 0.65)),
-          height: Math.floor(h - 160),
-        });
-        setLeftOffset("0px");
-        setStartPage(1);
+        pw = Math.floor(Math.min(w - spineLeft, h * 0.65));
       } else {
-        setPageSize({
-          width: Math.floor(Math.min(w - spineLeft, h * 1.3)),
-          height: Math.floor(h - 160),
-        });
-        setLeftOffset("calc(8vw + 8px - 1140px)");
-        setStartPage(1);
+        pw = Math.floor(Math.min(w - spineLeft, h * 1.3));
       }
+      const ph = Math.floor(h - 160);
+
+      setPageSize({ width: pw, height: ph });
+      setLeftOffset(`${Math.round(spineLeft - pw)}px`); // ← ここだけが本質的な修正点
+      setStartPage(w < 768 ? 0 : 1);
     };
+
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
@@ -255,12 +249,13 @@ export default function TimelineAlbumPage() {
 
       {/* 本エリア */}
       <div
+        ref={containerRef}
         style={{
           flex: 1,
           display: "flex",
           alignItems: "center",
           position: "relative",
-          overflow: "visible",
+          overflow: "hidden",
         }}
       >
         <div
@@ -302,6 +297,7 @@ export default function TimelineAlbumPage() {
             showCover={true}
             // usePortrait={true}
             // showCover={false}
+            usePortrait={false}
             mobileScrollSupport={true}
             startPage={startPage}
             drawShadow={true}
@@ -309,7 +305,10 @@ export default function TimelineAlbumPage() {
             startZIndex={20}
             autoSize={true}
             maxShadowOpacity={0.5}
-            onFlip={(e: any) => setCurrentPage(Math.min(e.data, pins.length))}
+            onFlip={(e: any) => {
+              const photoIndex = Math.round(e.data / 2); // 生ページ番号 → 写真の枚数に変換
+              setCurrentPage(Math.min(Math.max(0, photoIndex), pins.length));
+            }}
             style={{ boxShadow: "-8px 0 24px rgba(0,0,0,0.3)" }}
           >
             {/* ページ0：表紙（右に表示） */}
@@ -370,154 +369,161 @@ export default function TimelineAlbumPage() {
 
             {/* 各写真ページ */}
             {pins.flatMap((pin, i) => [
-              /* 右ページ（写真） */
-              <div
-                key={pin.id}
-                style={{
-                  background: "#F5F0E8",
-                  width: "100%",
-                  height: "100%",
-                  padding: "20px 20px 16px",
-                  boxSizing: "border-box",
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 9,
-                    color: "#AFA495",
-                    letterSpacing: "0.16em",
-                    textTransform: "uppercase",
-                    marginBottom: 12,
-                    fontFamily: "Georgia, serif",
-                    flexShrink: 0,
-                  }}
-                >
-                  {new Date(pin.createdAt).toLocaleDateString("ja-JP", {
-                    month: "long",
-                    day: "numeric",
-                    weekday: "short",
-                  })}
-                </p>
-                <div
-                  style={{
-                    position: "relative",
-                    width: "55%",
-                    margin: "0 auto 10px",
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: -7,
-                      left: "42%",
-                      width: 24,
-                      height: 9,
-                      background: "rgba(201,169,110,0.3)",
-                      borderRadius: 1,
-                      transform: "rotate(-2deg)",
-                      zIndex: 1,
-                    }}
-                  />
-                  <div
-                    style={{
-                      background: "#FFFFFF",
-                      padding: "5px 5px 16px",
-                      boxShadow: "0 2px 8px rgba(44,36,22,0.12)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "100%",
-                        aspectRatio: "4/3",
-                        background: "#EDE8DC",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {pin.imageUrl && (
-                        <img
-                          src={pin.imageUrl}
-                          alt=""
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-                  {pin.title && (
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "#2C2416",
-                        fontFamily: "Georgia, serif",
-                        lineHeight: 1.6,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {pin.title}
-                    </p>
-                  )}
-                  {pin.description && (
-                    <p
-                      style={{
-                        fontSize: 10,
-                        color: "#7A6E5F",
-                        fontFamily: "Georgia, serif",
-                        lineHeight: 1.7,
-                        marginBottom: 6,
-                      }}
-                    >
-                      {pin.description}
-                    </p>
-                  )}
-                  {pin.category && (
-                    <>
-                      <div
-                        style={{
-                          height: 1,
-                          background: "#DDD5C4",
-                          margin: "8px auto",
-                          width: "70%",
-                        }}
-                      />
-                      <p
-                        style={{
-                          fontSize: 9,
-                          color: "#AFA495",
-                          letterSpacing: "0.08em",
-                        }}
-                      >
-                        {pin.category
-                          .split(",")
-                          .map((t: string) => `#${t.trim()}`)
-                          .join("  ")}
-                      </p>
-                    </>
-                  )}
-                </div>
-                <p
-                  style={{
-                    alignSelf: "flex-end",
-                    fontSize: 8,
-                    color: "#C4BAB0",
-                    letterSpacing: "0.2em",
-                    fontFamily: "Georgia, serif",
-                    flexShrink: 0,
-                    marginTop: 8,
-                  }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-              </div>,
+              {/* 右ページ（写真） */}
+<div
+  key={pin.id}
+  style={{
+    background: "#F5F0E8",
+    width: "100%",
+    height: "100%",
+    padding: "16px 16px 12px",
+    boxSizing: "border-box",
+    position: "relative",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  }}
+>
+  <p
+    style={{
+      fontSize: 9,
+      color: "#AFA495",
+      letterSpacing: "0.14em",
+      textTransform: "uppercase",
+      marginBottom: 8,
+      fontFamily: "Georgia, serif",
+      flexShrink: 0,
+    }}
+  >
+    {new Date(pin.createdAt).toLocaleDateString("ja-JP", {
+      month: "long",
+      day: "numeric",
+      weekday: "short",
+    })}
+  </p>
+
+  {/* 写真：ここがメイン。余った縦スペースを全て使う */}
+  <div
+    style={{
+      position: "relative",
+      flex: 1,
+      minHeight: 0,
+      width: "100%",
+      margin: "0 0 10px",
+    }}
+  >
+    <div
+      style={{
+        position: "absolute",
+        top: -7,
+        left: "46%",
+        width: 24,
+        height: 9,
+        background: "rgba(201,169,110,0.3)",
+        borderRadius: 1,
+        transform: "rotate(-2deg)",
+        zIndex: 1,
+      }}
+    />
+    <div
+      style={{
+        background: "#FFFFFF",
+        padding: "5px 5px 14px",
+        boxShadow: "0 3px 10px rgba(44,36,22,0.14)",
+        width: "100%",
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          background: "#EDE8DC",
+          overflow: "hidden",
+        }}
+      >
+        {pin.imageUrl && (
+          <img
+            src={pin.imageUrl}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        )}
+      </div>
+    </div>
+  </div>
+
+  {/* キャプション：最小限に圧縮 */}
+  <div style={{ flexShrink: 0 }}>
+    {pin.title && (
+      <p
+        style={{
+          fontSize: 11,
+          color: "#2C2416",
+          fontFamily: "Georgia, serif",
+          lineHeight: 1.4,
+          marginBottom: 2,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {pin.title}
+      </p>
+    )}
+    {pin.description && (
+      <p
+        style={{
+          fontSize: 9,
+          color: "#7A6E5F",
+          fontFamily: "Georgia, serif",
+          lineHeight: 1.4,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical" as const,
+          overflow: "hidden",
+        }}
+      >
+        {pin.description}
+      </p>
+    )}
+    {pin.category && (
+      <p
+        style={{
+          fontSize: 8,
+          color: "#AFA495",
+          letterSpacing: "0.06em",
+          marginTop: 4,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {pin.category
+          .split(",")
+          .map((t: string) => `#${t.trim()}`)
+          .join("  ")}
+      </p>
+    )}
+  </div>
+
+  <p
+    style={{
+      alignSelf: "flex-end",
+      fontSize: 8,
+      color: "#C4BAB0",
+      letterSpacing: "0.2em",
+      fontFamily: "Georgia, serif",
+      flexShrink: 0,
+      marginTop: 6,
+    }}
+  >
+    {String(i + 1).padStart(2, "0")}
+  </p>
+</div>,
 
               /* 左ページ（固定画像） */
               leftPage(
