@@ -53,6 +53,8 @@ export default function VideoUploadPage() {
         process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!,
       );
       formData.append("resource_type", "video");
+      formData.append("quality", "auto");
+      // formData.append("fetch_format", "auto");
 
       const cloudinaryRes = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload`,

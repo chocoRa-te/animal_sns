@@ -36,3 +36,205 @@ body {
     opacity: 0;
   }
 } */
+
+/* App shell layout */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.app-main {
+  /* margin-left: 224px; Sidebarの幅 */
+  flex: 1;
+}
+
+/* Masonry grid */
+.masonry-grid {
+  display: flex;
+  margin-left: -10px;
+  width: auto;
+}
+
+.masonry-grid_column {
+  padding-left: 10px;
+  background-clip: padding-box;
+}
+
+.masonry-grid_column > div {
+  margin-bottom: 10px;
+}
+
+.stf__item {
+  background: #F5F0E8 !important;
+}
+
+/* ── Home: Today Zone ─────────────────────── */
+.today-zone {
+  background: #1C1611;
+}
+
+.today-texture {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 80%, rgba(201,169,110,0.06) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(201,169,110,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.today-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #C9A96E;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.today-cta:hover { opacity: 0.92; }
+
+.today-cta-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.today-cta-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(28,22,17,0.12);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.today-cta-arrow {
+  opacity: 0.6;
+}
+
+/* ── Home: Past Zone ─────────────────────── */
+.past-zone {
+  background: #F8F4EE;
+}
+
+/* ── Journal timeline ─────────────────────── */
+.journal-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, #DDD4C6, transparent);
+}
+
+.day-entry {
+  position: relative;
+  padding-left: 20px;
+}
+
+.day-dot {
+  position: absolute;
+  left: -4px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #C9A96E;
+  border: 2px solid #F8F4EE;
+}
+
+/* ── Animations ─────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out forwards;
+}
+/* ── Home: Today Zone ─────────────────────── */
+.today-zone {
+  background: #2C2416;
+}
+
+.today-texture {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 20% 80%, rgba(201,169,110,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.today-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #C9A96E;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.today-cta:hover { opacity: 0.92; }
+
+.today-cta-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.today-cta-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(44,36,22,0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.today-cta-arrow { opacity: 0.6; }
+
+/* ── Home: Past Zone ─────────────────────── */
+.past-zone {
+  background: #F5F0E8;
+}
+
+/* ── Journal timeline ─────────────────────── */
+.journal-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, #DDD5C4, transparent);
+}
+
+.day-entry {
+  position: relative;
+  padding-left: 20px;
+}
+
+.day-dot {
+  position: absolute;
+  left: -4px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #C9A96E;
+  border: 2px solid #F5F0E8;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out forwards;
+}

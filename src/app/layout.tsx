@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { Sidebar } from "@/components/layout/Sidebar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ピンテスト - Pinterest風UI",
-  description: "Pinterest風のユーザーインターフェースを持つWebアプリケーション",
+  title: "PetLog",
+  description: "ペットとの思い出を残すアプリ",
 };
 
 export default function RootLayout({
@@ -24,7 +26,18 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
         <SessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <div className="app-shell">
+              <Sidebar />
+              <main
+                className="app-main md:ml-56 ml-0 min-h-screen bg-[#F5F0E8]"
+                style={{ overflow: "auto" }}
+              >
+                {children}
+              </main>
+            </div>
+            <BottomNav />
+          </ThemeProvider>
         </SessionProvider>
       </body>
     </html>

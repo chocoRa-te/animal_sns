@@ -236,3 +236,71 @@ export function PinCard({
     </div>
   );
 }
+
+interface MemoryCardProps {
+  pinId: string
+  imageUrl: string
+  title: string
+  username: string
+  userId: string
+  category?: string
+  tags?: string
+  isOwner?: boolean
+  darkMode?: boolean
+}
+
+export function MemoryCard({
+  pinId,
+  imageUrl,
+  title,
+  username,
+  userId,
+  category,
+  tags,
+  isOwner = false,
+  darkMode = false,
+}: MemoryCardProps) {
+  const router = useRouter()
+  
+
+  return (
+    <div
+      className="cursor-pointer"
+      style={{ width: 160 }}
+      onClick={() => router.push(`/pins/${pinId}`)}
+    >
+      {/* ポラロイド風 */}
+      <div
+        className="shadow-lg"
+        style={{
+          background: darkMode ? "#2C2416" : "#FFFFFF",
+          padding: "8px 8px 28px",
+        }}
+      >
+        <div style={{ width: "100%", aspectRatio: "1", overflow: "hidden", background: "#EDE8DC" }}>
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt={title}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )}
+        </div>
+        {title && (
+          <p style={{
+            fontSize: 10,
+            color: darkMode ? "#C8B89A" : "#7A6E5F",
+            textAlign: "center",
+            marginTop: 6,
+            fontFamily: "Georgia, serif",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}>
+            {title}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}

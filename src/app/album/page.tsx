@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Navbar } from "@/components/layout/Navbar"
-import { Play, SlidersHorizontal, X } from "lucide-react"
+import { ChevronLeft, Plus } from "lucide-react"
 
 interface Pin {
   id: string
@@ -17,17 +16,27 @@ interface Pin {
   userId: string
 }
 
+interface TimelineMonth {
+  year: number
+  month: number
+  count: number
+  thumbnail: string
+}
+
+interface CustomAlbum {
+  tag: string
+  photoCount: number
+  videoCount: number
+  thumbnail: string
+}
+
 export default function AlbumPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [pins, setPins] = useState<Pin[]>([])
+  const [timeline, setTimeline] = useState<Record<number, TimelineMonth[]>>({})
+  const [customAlbums, setCustomAlbums] = useState<CustomAlbum[]>([])
   const [loading, setLoading] = useState(true)
-  const [showFilter, setShowFilter] = useState(false)
-  const [filter, setFilter] = useState<"all" | "photo" | "video">("all")
-  const [selectedYear, setSelectedYear] = useState("すべて")
-  const [selectedMonth, setSelectedMonth] = useState("すべて")
-  const [selectedTag, setSelectedTag] = useState("すべて")
-  const filterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -35,227 +44,232 @@ export default function AlbumPage() {
     fetch("/api/pins")
       .then((res) => res.json())
       .then((data) => {
-        const myPins = data
-          .filter((pin: any) => pin.userId === session.user.id)
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        const myPins: Pin[] = data.filter((pin: any) => pin.userId === session.user.id)
         setPins(myPins)
+
+        // タイムライン生成（年月ごと）
+        const timelineMap: Record<string, TimelineMonth> = {}
+        myPins.forEach((pin) => {
+          const d = new Date(pin.createdAt)
+          const key = `${d.getFullYear()}-${d.getMonth() + 1}`
+          if (!timelineMap[key]) {
+            timelineMap[key] = {
+              year: d.getFullYear(),
+              month: d.getMonth() + 1,
+              count: 0,
+              thumbnail: pin.imageUrl || pin.videoUrl || "",
+            }
+          }
+          timelineMap[key].count++
+        })
+
+        // 年ごとにグループ化
+        const byYear: Record<number, TimelineMonth[]> = {}
+        Object.values(timelineMap).forEach((m) => {
+          if (!byYear[m.year]) byYear[m.year] = []
+          byYear[m.year].push(m)
+        })
+        Object.keys(byYear).forEach((year) => {
+          byYear[Number(year)].sort((a, b) => b.month - a.month)
+        })
+        setTimeline(byYear)
+
+        // カスタムアルバム（タグ別）
+        const tagMap: Record<string, CustomAlbum> = {}
+        myPins.forEach((pin) => {
+          if (!pin.category) return
+          pin.category.split(",").map((t) => t.trim()).filter(Boolean).forEach((tag) => {
+            if (!tagMap[tag]) {
+              tagMap[tag] = {
+                tag,
+                photoCount: 0,
+                videoCount: 0,
+                thumbnail: pin.imageUrl || pin.videoUrl || "",
+              }
+            }
+            if (pin.type === "video") tagMap[tag].videoCount++
+            else tagMap[tag].photoCount++
+          })
+        })
+        setCustomAlbums(Object.values(tagMap))
         setLoading(false)
       })
   }, [session])
 
-  // メニューの外をクリックしたら閉じる
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setShowFilter(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  const sortedYears = Object.keys(timeline).map(Number).sort((a, b) => b - a)
 
-  // タグ一覧を作成
-  const allTags = ["すべて", ...Array.from(new Set(
-    pins.flatMap((pin) => pin.category ? pin.category.split(",").map((t) => t.trim()).filter(Boolean) : [])
-  ))]
-
-  // 年月一覧
-  const years = ["すべて", ...Array.from(new Set(pins.map((pin) => new Date(pin.createdAt).getFullYear().toString()))).sort().reverse()]
-  const months = selectedYear === "すべて"
-    ? ["すべて"]
-    : ["すべて", ...Array.from(new Set(
-        pins
-          .filter((pin) => new Date(pin.createdAt).getFullYear().toString() === selectedYear)
-          .map((pin) => (new Date(pin.createdAt).getMonth() + 1).toString())
-      )).sort((a, b) => Number(a) - Number(b))]
-
-  // フィルター処理
-  const filteredPins = pins.filter((pin) => {
-    const pinYear = new Date(pin.createdAt).getFullYear().toString()
-    const pinMonth = (new Date(pin.createdAt).getMonth() + 1).toString()
-    const tags = pin.category ? pin.category.split(",").map((t) => t.trim()) : []
-
-    const typeMatch = filter === "all" || (filter === "photo" && pin.type !== "video") || (filter === "video" && pin.type === "video")
-    const yearMatch = selectedYear === "すべて" || pinYear === selectedYear
-    const monthMatch = selectedMonth === "すべて" || pinMonth === selectedMonth
-    const tagMatch = selectedTag === "すべて" || tags.includes(selectedTag)
-
-    return typeMatch && yearMatch && monthMatch && tagMatch
-  })
-
-  // アクティブフィルター数
-  const activeFilterCount = [
-    filter !== "all",
-    selectedYear !== "すべて",
-    selectedMonth !== "すべて",
-    selectedTag !== "すべて",
-  ].filter(Boolean).length
+  const bookColors = [
+    { bg: "#EDE8DC", spine: "#DDD5C4" },
+    { bg: "#E8E2D8", spine: "#C9BFB5" },
+    { bg: "#E4DDD3", spine: "#C4BAB0" },
+    { bg: "#E0D9CF", spine: "#BFB5AB" },
+    { bg: "#DDD6CC", spine: "#BDB3A9" },
+  ]
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-[#F7F5F3]">
-        <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <p className="text-[#6B6560]">ログインしてください</p>
-        </div>
+      <div className="min-h-screen bg-[#F5F0E8] flex items-center justify-center">
+        <p className="text-[#AFA495] text-sm">ログインしてください</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F3]">
-      <Navbar />
-      <main className="container mx-auto px-4 py-4 max-w-2xl">
+    <div className="min-h-screen bg-[#F5F0E8] pb-24">
 
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-semibold text-[#1A1814]">アルバム</h1>
-            <p className="text-xs text-[#A39E99]">{filteredPins.length}件</p>
-          </div>
+      {/* ヘッダー */}
+      <div className="px-6 pt-12 pb-8">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 text-xs text-[#AFA495] mb-6"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          プロフィール
+        </button>
+        <h1 className="text-3xl font-light text-[#2C2416] font-serif tracking-tight">アルバム</h1>
+        <p className="text-xs text-[#AFA495] mt-1.5 tracking-wide">思い出の記録</p>
+      </div>
 
-          {/* フィルターボタン */}
-          <div className="relative" ref={filterRef}>
-            <button
-              onClick={() => setShowFilter(!showFilter)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E8E4E0] rounded-full text-sm text-[#1A1814] hover:bg-[#F7F5F3] transition-colors"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              フィルター
-              {activeFilterCount > 0 && (
-                <span className="h-4 w-4 bg-[#1A1814] text-white text-[10px] rounded-full flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+      {/* タイムライン */}
+      <div className="px-6 mb-2">
+        <p className="text-[10px] text-[#AFA495] tracking-widest uppercase mb-3">タイムライン</p>
+      </div>
+      <div className="h-px bg-[#DDD5C4] mx-6 mb-6" />
 
-            {/* フィルターパネル */}
-            {showFilter && (
-              <div className="absolute right-0 top-10 bg-white border border-[#E8E4E0] rounded-xl shadow-lg w-64 z-50 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-[#1A1814]">フィルター</h2>
-                  <button
-                    onClick={() => {
-                      setFilter("all")
-                      setSelectedYear("すべて")
-                      setSelectedMonth("すべて")
-                      setSelectedTag("すべて")
-                    }}
-                    className="text-xs text-[#A39E99] hover:text-[#1A1814]"
+      {loading ? (
+        <p className="text-center text-[#AFA495] text-sm px-6">読み込み中...</p>
+      ) : sortedYears.length === 0 ? (
+        <p className="text-center text-[#AFA495] text-sm px-6">まだ記録がありません</p>
+      ) : (
+        sortedYears.map((year) => (
+          <div key={year} className="mb-8">
+            <p className="text-sm text-[#AFA495] font-serif px-6 mb-3">{year}</p>
+            <div className="flex gap-4 overflow-x-auto px-6 pb-3 scrollbar-hide">
+              {timeline[year].map((m, i) => {
+                const color = bookColors[i % bookColors.length]
+                return (
+                  <div
+                    key={`${year}-${m.month}`}
+                    className="flex-shrink-0 cursor-pointer"
+                    style={{ width: 88 }}
+                    onClick={() => router.push(`/album/timeline/${year}/${m.month}`)}
                   >
-                    リセット
-                  </button>
-                </div>
-
-                {/* タイプ */}
-                <div className="mb-3">
-                  <p className="text-xs text-[#A39E99] mb-1.5">種類</p>
-                  <div className="flex gap-2">
-                    {[{ label: "すべて", value: "all" }, { label: "📷 写真", value: "photo" }, { label: "🎥 動画", value: "video" }].map((f) => (
-                      <button
-                        key={f.value}
-                        onClick={() => setFilter(f.value as "all" | "photo" | "video")}
-                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
-                          filter === f.value ? "bg-[#1A1814] text-white" : "bg-[#E8E4E0] text-[#6B6560]"
-                        }`}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* タグ */}
-                <div className="mb-3">
-                  <p className="text-xs text-[#A39E99] mb-1.5">タグ</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {allTags.map((tag) => (
-                      <button
-                        key={tag}
-                        onClick={() => setSelectedTag(tag)}
-                        className={`px-2 py-1 text-xs rounded-full transition-colors ${
-                          selectedTag === tag ? "bg-[#1A1814] text-white" : "bg-[#E8E4E0] text-[#6B6560]"
-                        }`}
-                      >
-                        {tag === "すべて" ? "すべて" : `#${tag}`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 年 */}
-                <div className="mb-3">
-                  <p className="text-xs text-[#A39E99] mb-1.5">年</p>
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(e.target.value)
-                      setSelectedMonth("すべて")
-                    }}
-                    className="w-full border border-[#E8E4E0] rounded-lg px-3 py-1.5 text-sm bg-[#F7F5F3] focus:outline-none text-[#1A1814]"
-                  >
-                    {years.map((year) => (
-                      <option key={year} value={year}>{year === "すべて" ? "すべての年" : `${year}年`}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 月 */}
-                {selectedYear !== "すべて" && (
-                  <div>
-                    <p className="text-xs text-[#A39E99] mb-1.5">月</p>
-                    <select
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
-                      className="w-full border border-[#E8E4E0] rounded-lg px-3 py-1.5 text-sm bg-[#F7F5F3] focus:outline-none text-[#1A1814]"
+                    {/* 本のカバー */}
+                    <div
+                      className="relative overflow-hidden"
+                      style={{
+                        width: 88,
+                        height: 116,
+                        borderRadius: "2px 8px 8px 2px",
+                        background: color.bg,
+                        boxShadow: "-3px 3px 8px rgba(44,36,22,0.15), inset -2px 0 4px rgba(44,36,22,0.08)",
+                      }}
                     >
-                      {months.map((month) => (
-                        <option key={month} value={month}>{month === "すべて" ? "すべての月" : `${month}月`}</option>
-                      ))}
-                    </select>
+                      {/* 背表紙 */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0, top: 0, bottom: 0,
+                          width: 8,
+                          background: color.spine,
+                        }}
+                      />
+                      {/* サムネイル */}
+                      {m.thumbnail ? (
+                        <img
+                          src={m.thumbnail}
+                          alt=""
+                          style={{
+                            position: "absolute",
+                            left: 8, top: 0, right: 0, bottom: 0,
+                            width: "calc(100% - 8px)",
+                            height: "100%",
+                            objectFit: "cover",
+                            opacity: 0.85,
+                          }}
+                        />
+                      ) : (
+                        <div style={{ position: "absolute", left: 8, top: 0, right: 0, bottom: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>🐾</div>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#2C2416] font-serif text-center mt-2">{m.month}月</p>
+                    <p className="text-[9px] text-[#AFA495] text-center mt-0.5">{m.count}件</p>
                   </div>
-                )}
-              </div>
-            )}
+                )
+              })}
+            </div>
           </div>
-        </div>
+        ))
+      )}
 
-        {/* グリッド */}
-        {loading ? (
-          <p className="text-center text-[#A39E99] text-sm">読み込み中...</p>
-        ) : filteredPins.length === 0 ? (
-          <p className="text-center text-[#A39E99] text-sm mt-8">該当するコンテンツがありません</p>
-        ) : (
-          <div className="grid grid-cols-3 gap-0.5">
-            {filteredPins.map((pin) => (
+      {/* カスタムアルバム */}
+      <div className="mt-4 px-6 mb-2">
+        <p className="text-[10px] text-[#AFA495] tracking-widest uppercase mb-3">マイアルバム</p>
+      </div>
+      <div className="h-px bg-[#DDD5C4] mx-6 mb-6" />
+
+      <div className="grid grid-cols-2 gap-5 px-6">
+        {customAlbums.map((album, i) => {
+          const color = bookColors[i % bookColors.length]
+          return (
+            <div
+              key={album.tag}
+              className="cursor-pointer"
+              onClick={() => router.push(`/album/${encodeURIComponent(album.tag)}`)}
+            >
               <div
-                key={pin.id}
-                className="relative aspect-square bg-[#E8E4E0] cursor-pointer overflow-hidden"
-                onClick={() => {
-                  if (pin.type === "video") {
-                    router.push("/video")
-                  } else {
-                    router.push(`/pins/${pin.id}`)
-                  }
+                className="relative overflow-hidden w-full"
+                style={{
+                  aspectRatio: "3/4",
+                  borderRadius: "2px 12px 12px 2px",
+                  background: color.bg,
+                  boxShadow: "-4px 4px 12px rgba(44,36,22,0.15), inset -3px 0 6px rgba(44,36,22,0.08)",
                 }}
               >
-                {pin.imageUrl ? (
-                  <img src={pin.imageUrl} alt={pin.title} className="w-full h-full object-cover" />
-                ) : pin.videoUrl ? (
-                  <video src={pin.videoUrl} className="w-full h-full object-cover" muted />
-                ) : null}
-
-                {/* 動画マーク */}
-                {pin.type === "video" && (
-                  <div className="absolute top-1 right-1">
-                    <Play className="h-4 w-4 text-white drop-shadow-lg" fill="white" />
-                  </div>
+                {/* 背表紙 */}
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 12, background: color.spine }} />
+                {/* サムネイル */}
+                {album.thumbnail ? (
+                  <img
+                    src={album.thumbnail}
+                    alt=""
+                    style={{
+                      position: "absolute",
+                      left: 12, top: 0, right: 0, bottom: 40,
+                      width: "calc(100% - 12px)",
+                      height: "calc(100% - 40px)",
+                      objectFit: "cover",
+                      opacity: 0.85,
+                    }}
+                  />
+                ) : (
+                  <div style={{ position: "absolute", left: 12, top: 0, right: 0, bottom: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🐾</div>
                 )}
+                {/* ラベル */}
+                <div style={{ position: "absolute", bottom: 0, left: 12, right: 0, height: 40, background: "#F5F0E8", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 8px" }}>
+                  <p style={{ fontSize: 10, color: "#2C2416", textAlign: "center", fontFamily: "Georgia, serif", lineHeight: 1.3 }}>#{album.tag}</p>
+                </div>
               </div>
-            ))}
+              <p className="text-xs text-[#2C2416] font-serif mt-2 pl-3">#{album.tag}</p>
+              <p className="text-[10px] text-[#AFA495] mt-0.5 pl-3">{album.photoCount + album.videoCount}件</p>
+            </div>
+          )
+        })}
+
+        {/* 新しいアルバム追加 */}
+        <div className="cursor-pointer">
+          <div
+            className="w-full border border-dashed border-[#C4BAB0] flex flex-col items-center justify-center gap-2"
+            style={{ aspectRatio: "3/4", borderRadius: "2px 12px 12px 2px" }}
+          >
+            <div className="w-8 h-8 rounded-full border border-[#C4BAB0] flex items-center justify-center">
+              <Plus className="h-4 w-4 text-[#AFA495]" />
+            </div>
+            <p className="text-[11px] text-[#AFA495]">新しいアルバム</p>
           </div>
-        )}
-      </main>
+          <p className="text-xs text-[#AFA495] font-serif mt-2 pl-3">新しいアルバム</p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -40,6 +40,7 @@ model User {
   sentNotifications Notification[]   @relation("sentNotifications")
   blocking          Block[]          @relation("blocking")
   blockedBy         Block[]          @relation("blockedBy")
+  albums            Album[]
 }
 
 model Account {
@@ -77,6 +78,27 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Album {
+  id        String     @id @default(cuid())
+  title     String
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pins      AlbumPin[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model AlbumPin {
+  id        String   @id @default(cuid())
+  albumId   String
+  pinId     String
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  pin       Pin      @relation(fields: [pinId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([albumId, pinId])
+}
+
 model Pin {
   id          String   @id @default(cuid())
   title       String
@@ -96,6 +118,7 @@ model Pin {
   comments      Comment[]
   likes         Like[]
   notifications Notification[]
+  albums        AlbumPin[]
 }
 
 model Board {
