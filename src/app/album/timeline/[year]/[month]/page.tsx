@@ -32,41 +32,51 @@ export default function TimelineAlbumPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const updateSize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const spineLeft = w * 0.08 + 8;
+      const W = container.clientWidth;
+      const H = container.clientHeight;
+      const isMobile = W < 500;
 
       let pw: number;
-      if (w < 768) {
-        pw = Math.floor(w * 0.9);
-      } else if (w < 1280) {
-        pw = Math.floor(Math.min(w - spineLeft, h * 0.65));
-      } else {
-        pw = Math.floor(Math.min(w - spineLeft, h * 1.3));
+      const ph = Math.floor(H * 0.92);
+
+      if (isMobile) {
+        pw = Math.floor(W * 0.92);
+        setPageSize({ width: pw, height: ph });
+        setLeftOffset("0px");
+        setStartPage(0);
+        return;
       }
 
-      // BottomNav表示時（768px未満）はナビゲーション下余白がpb-24(96px)、
-      // それ以外はpb-8(32px)。その差(64px)を本の高さから差し引いて、
-      // はみ出し・見切れを防ぐ
-      const navExtra = w < 768 ? 64 : 0;
-      const ph = Math.floor(h - 160 - navExtra);
+      // 「左ページの覗き幅(sliverRatio)」と「右ページ右の余白(rightMarginRatio)」を
+      // 画面幅に対する比率で固定し、そこから必要なpwを逆算する
+      const sliverRatio = 0.06; // pwに対する左ページの覗き幅の比率
+      const rightMarginRatio = 0.04; // 全体幅Wに対する右側余白の比率
 
-      // 左ページを少しだけ覗かせて「奥にページがある」ことを示す幅
-      const sliver = w < 768 ? 0 : Math.max(20, Math.round(pw * 0.06));
+      let computedPw = (W * (1 - rightMarginRatio)) / (1 + sliverRatio);
 
-      // 画面幅に応じて左へ寄せる量
-      // フルスクリーン: 170で調整済み。ハーフスクリーンにも新規追加
-      const extraShift = w >= 1280 ? 170 : w >= 768 ? 60 : 0;
+      // 縦に長くなりすぎないよう、高さ基準の上限もかける
+      const heightCap = H * 0.85;
+      computedPw = Math.min(computedPw, heightCap);
+      computedPw = Math.max(260, computedPw); // 極端に小さくなりすぎないための下限
+
+      pw = Math.floor(computedPw);
+
+      const sliverWidth = sliverRatio * pw;
+      const containerLeft = sliverWidth - pw;
 
       setPageSize({ width: pw, height: ph });
-      setLeftOffset(`${Math.round(spineLeft - pw + sliver - extraShift)}px`);
-      setStartPage(w < 768 ? 0 : 1);
+      setLeftOffset(`${Math.round(containerLeft)}px`);
+      setStartPage(1);
     };
 
     updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(container);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -236,6 +246,23 @@ export default function TimelineAlbumPage() {
         flexDirection: "column",
       }}
     >
+      {/* デバッグ用（あとで削除） */}
+      <p
+        style={{
+          position: "fixed",
+          top: 8,
+          left: 8,
+          background: "red",
+          color: "white",
+          padding: 4,
+          zIndex: 9999,
+          fontSize: 12,
+        }}
+      >
+        w: {typeof window !== "undefined" ? window.innerWidth : "-"} /
+        pageWidth: {pageSize.width} / rightPageLeftX:{" "}
+        {Math.round(parseFloat(leftOffset) + pageSize.width)}
+      </p>
       {/* ヘッダー */}
       <div
         style={{
