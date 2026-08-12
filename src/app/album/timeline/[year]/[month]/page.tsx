@@ -45,45 +45,22 @@ export default function TimelineAlbumPage() {
       } else {
         pw = Math.floor(Math.min(w - spineLeft, h * 1.3));
       }
-      const ph = Math.floor(h - 160);
+
+      // BottomNav表示時（768px未満）はナビゲーション下余白がpb-24(96px)、
+      // それ以外はpb-8(32px)。その差(64px)を本の高さから差し引いて、
+      // はみ出し・見切れを防ぐ
+      const navExtra = w < 768 ? 64 : 0;
+      const ph = Math.floor(h - 160 - navExtra);
 
       // 左ページを少しだけ覗かせて「奥にページがある」ことを示す幅
-      // モバイルは画面が狭いので覗かせず、従来通り右ページのみ表示
       const sliver = w < 768 ? 0 : Math.max(20, Math.round(pw * 0.06));
 
-      // フルスクリーンだけ、さらに左へ寄せる量（値を大きくするほど左に動く）
-      const extraShift = w >= 1280 ? 800 : 0;
-
-      console.log(
-        "w:",
-        w,
-        "pw:",
-        pw,
-        "extraShift:",
-        extraShift,
-        "leftOffset:",
-        spineLeft - pw + sliver - extraShift,
-      );
-      {
-        /* デバッグ用：一時的に画面に数値を表示 */
-      }
-      <div
-        style={{
-          position: "fixed",
-          top: 8,
-          left: 8,
-          background: "red",
-          color: "white",
-          padding: 4,
-          zIndex: 9999,
-          fontSize: 12,
-        }}
-      >
-        leftOffset: {leftOffset}
-      </div>;
+      // 画面幅に応じて左へ寄せる量
+      // フルスクリーン: 170で調整済み。ハーフスクリーンにも新規追加
+      const extraShift = w >= 1280 ? 170 : w >= 768 ? 60 : 0;
 
       setPageSize({ width: pw, height: ph });
-      setLeftOffset(`${Math.round(spineLeft - pw + sliver)}px`);
+      setLeftOffset(`${Math.round(spineLeft - pw + sliver - extraShift)}px`);
       setStartPage(w < 768 ? 0 : 1);
     };
 
@@ -748,11 +725,14 @@ export default function TimelineAlbumPage() {
 
       {/* ナビゲーション */}
       <div
+        className="pb-24 md:pb-8"
         style={{
           display: "flex",
           justifyContent: "center",
           gap: 16,
-          padding: "16px 24px 32px",
+          paddingTop: 16,
+          paddingLeft: 24,
+          paddingRight: 24,
         }}
       >
         <button
