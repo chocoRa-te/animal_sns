@@ -32,51 +32,41 @@ export default function TimelineAlbumPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
     const updateSize = () => {
-      const W = container.clientWidth;
-      const H = container.clientHeight;
-      const isMobile = W < 500;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const spineLeft = w * 0.08 + 8;
 
       let pw: number;
-      const ph = Math.floor(H * 0.92);
-
-      if (isMobile) {
-        pw = Math.floor(W * 0.92);
-        setPageSize({ width: pw, height: ph });
-        setLeftOffset("0px");
-        setStartPage(0);
-        return;
+      if (w < 768) {
+        pw = Math.floor(w * 0.9);
+      } else if (w < 1280) {
+        pw = Math.floor(Math.min(w - spineLeft, h * 0.65));
+      } else {
+        pw = Math.floor(Math.min(w - spineLeft, h * 1.3));
       }
 
-      // 「左ページの覗き幅(sliverRatio)」と「右ページ右の余白(rightMarginRatio)」を
-      // 画面幅に対する比率で固定し、そこから必要なpwを逆算する
-      const sliverRatio = 0.06; // pwに対する左ページの覗き幅の比率
-      const rightMarginRatio = 0.04; // 全体幅Wに対する右側余白の比率
+      // BottomNav表示時（768px未満）はナビゲーション下余白がpb-24(96px)、
+      // それ以外はpb-8(32px)。その差(64px)を本の高さから差し引いて、
+      // はみ出し・見切れを防ぐ
+      const navExtra = w < 768 ? 64 : 0;
+      const ph = Math.floor(h - 160 - navExtra);
 
-      let computedPw = (W * (1 - rightMarginRatio)) / (1 + sliverRatio);
+      // 左ページを少しだけ覗かせて「奥にページがある」ことを示す幅
+      const sliver = w < 768 ? 0 : Math.max(20, Math.round(pw * 0.06));
 
-      // 縦に長くなりすぎないよう、高さ基準の上限もかける
-      const heightCap = H * 0.85;
-      computedPw = Math.min(computedPw, heightCap);
-      computedPw = Math.max(260, computedPw); // 極端に小さくなりすぎないための下限
-
-      pw = Math.floor(computedPw);
-
-      const sliverWidth = sliverRatio * pw;
-      const containerLeft = sliverWidth - pw;
+      // 画面幅に応じて左へ寄せる量
+      // フルスクリーン: 170で調整済み。ハーフスクリーンにも新規追加
+      const extraShift = w >= 1280 ? 170 : w >= 700 ? 40 : 0;
 
       setPageSize({ width: pw, height: ph });
-      setLeftOffset(`${Math.round(containerLeft)}px`);
-      setStartPage(1);
+      setLeftOffset(`${Math.round(spineLeft - pw + sliver - extraShift)}px`);
+      setStartPage(w < 768 ? 0 : 1);
     };
 
     updateSize();
-    const ro = new ResizeObserver(updateSize);
-    ro.observe(container);
-    return () => ro.disconnect();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
   }, []);
 
   useEffect(() => {
