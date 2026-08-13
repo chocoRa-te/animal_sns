@@ -117,6 +117,14 @@ export default function TimelineAlbumPage() {
   const padTop = Math.max(22, Math.round(pageSize.height * 0.06));
   const padBottom = Math.max(18, Math.round(pageSize.height * 0.05));
 
+  // CSSのcontainer queryを使い、各ページ自身の実際の幅(cqw)に対する
+  // 正確な割合で文字・写真サイズを計算する。JSでの当てずっぽうな
+  // 基準値やクランプが不要になり、常に正確に比例する。
+  // 480pxのページ幅で気持ちよく見えるよう設計した値を、そのまま%に変換している。
+  const cqSize = (basePx: number) => `${((basePx / 480) * 100).toFixed(3)}cqw`;
+  const cqFont = (basePx: number) =>
+    `clamp(7px, ${((basePx / 480) * 100).toFixed(3)}cqw, 999px)`;
+
   const leftPage = (key: string, date?: string) => (
     <div
       key={key}
@@ -131,6 +139,7 @@ export default function TimelineAlbumPage() {
         flexDirection: "column",
         overflow: "hidden",
         filter: "grayscale(100%)",
+        containerType: "inline-size" as any,
       }}
     >
       {/* 綴じ目の影（右端） */}
@@ -150,7 +159,7 @@ export default function TimelineAlbumPage() {
       {date && (
         <p
           style={{
-            fontSize: 9,
+            fontSize: cqFont(9),
             color: "#AFA495",
             letterSpacing: "0.14em",
             textTransform: "uppercase",
@@ -176,17 +185,17 @@ export default function TimelineAlbumPage() {
           style={{
             position: "relative",
             width: "60%",
-            maxWidth: 240,
+            maxWidth: cqSize(240),
             transform: "rotate(1.5deg)",
           }}
         >
           <div
             style={{
               position: "absolute",
-              top: -7,
+              top: `-${cqSize(7)}`,
               left: "40%",
-              width: 22,
-              height: 8,
+              width: cqSize(22),
+              height: cqSize(8),
               background: "rgba(201,169,110,0.3)",
               borderRadius: 1,
               transform: "rotate(-3deg)",
@@ -360,13 +369,14 @@ export default function TimelineAlbumPage() {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                containerType: "inline-size" as any,
               }}
             >
               {/* エンボス風の二重枠 */}
               <div
                 style={{
                   position: "absolute",
-                  inset: 18,
+                  inset: cqSize(18),
                   border: "1px solid rgba(44,36,22,0.18)",
                   pointerEvents: "none",
                 }}
@@ -374,7 +384,7 @@ export default function TimelineAlbumPage() {
               <div
                 style={{
                   position: "absolute",
-                  inset: 24,
+                  inset: cqSize(24),
                   border: "1px solid rgba(44,36,22,0.1)",
                   pointerEvents: "none",
                 }}
@@ -382,17 +392,17 @@ export default function TimelineAlbumPage() {
 
               {/* コーナー装飾（革表紙の金具風） */}
               {[
-                { top: 30, left: 30, borderWidth: "2px 0 0 2px" },
-                { top: 30, right: 30, borderWidth: "2px 2px 0 0" },
-                { bottom: 30, left: 30, borderWidth: "0 0 2px 2px" },
-                { bottom: 30, right: 30, borderWidth: "0 2px 2px 0" },
+                { top: cqSize(30), left: cqSize(30), borderWidth: `${cqSize(2)} 0 0 ${cqSize(2)}` },
+                { top: cqSize(30), right: cqSize(30), borderWidth: `${cqSize(2)} ${cqSize(2)} 0 0` },
+                { bottom: cqSize(30), left: cqSize(30), borderWidth: `0 0 ${cqSize(2)} ${cqSize(2)}` },
+                { bottom: cqSize(30), right: cqSize(30), borderWidth: `0 ${cqSize(2)} ${cqSize(2)} 0` },
               ].map((pos, idx) => (
                 <div
                   key={idx}
                   style={{
                     position: "absolute",
-                    width: 20,
-                    height: 20,
+                    width: cqSize(20),
+                    height: cqSize(20),
                     borderColor: "#C9A96E",
                     borderStyle: "solid",
                     opacity: 0.7,
@@ -408,7 +418,7 @@ export default function TimelineAlbumPage() {
                   position: "absolute",
                   top: 0,
                   right: "16%",
-                  width: 14,
+                  width: cqSize(14),
                   height: "48%",
                   background: "#C9A96E",
                   boxShadow: "0 2px 6px rgba(44,36,22,0.2)",
@@ -420,14 +430,14 @@ export default function TimelineAlbumPage() {
               <div
                 style={{
                   width: "44%",
-                  maxWidth: 170,
+                  maxWidth: cqSize(170),
                   aspectRatio: "1 / 1",
                   borderRadius: "50%",
                   overflow: "hidden",
-                  border: "3px solid #F5F0E8",
+                  border: `${cqSize(3)} solid #F5F0E8`,
                   boxShadow:
                     "0 6px 18px rgba(44,36,22,0.22), 0 0 0 1px rgba(201,169,110,0.5)",
-                  marginBottom: 22,
+                  marginBottom: cqSize(22),
                   background: "#EDE8DC",
                 }}
               >
@@ -445,10 +455,10 @@ export default function TimelineAlbumPage() {
 
               <p
                 style={{
-                  fontSize: 10,
+                  fontSize: cqFont(10),
                   letterSpacing: "0.2em",
                   color: "#8A7757",
-                  marginBottom: 8,
+                  marginBottom: cqSize(8),
                 }}
               >
                 🐾 {year}年{month}月
@@ -456,7 +466,7 @@ export default function TimelineAlbumPage() {
 
               <p
                 style={{
-                  fontSize: 30,
+                  fontSize: cqFont(30),
                   fontWeight: 300,
                   color: "#2C2416",
                   fontFamily: "Georgia, serif",
@@ -471,16 +481,16 @@ export default function TimelineAlbumPage() {
 
               <div
                 style={{
-                  width: 32,
+                  width: cqSize(32),
                   height: 1,
                   background: "#C9A96E",
-                  margin: "18px auto",
+                  margin: `${cqSize(18)} auto`,
                 }}
               />
 
               <p
                 style={{
-                  fontSize: 9,
+                  fontSize: cqFont(9),
                   color: "#8A7757",
                   letterSpacing: "0.1em",
                 }}
@@ -530,6 +540,7 @@ export default function TimelineAlbumPage() {
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
+                  containerType: "inline-size" as any,
                 }}
               >
                 {/* 綴じ目の影（左端） */}
@@ -547,7 +558,7 @@ export default function TimelineAlbumPage() {
                 />
                 <p
                   style={{
-                    fontSize: 9,
+                    fontSize: cqFont(9),
                     color: "#AFA495",
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
@@ -576,17 +587,17 @@ export default function TimelineAlbumPage() {
                     style={{
                       position: "relative",
                       width: "78%",
-                      maxWidth: 340,
+                      maxWidth: cqSize(340),
                       transform: "rotate(-1.2deg)",
                     }}
                   >
                     <div
                       style={{
                         position: "absolute",
-                        top: -7,
+                        top: `-${cqSize(7)}`,
                         left: "44%",
-                        width: 26,
-                        height: 9,
+                        width: cqSize(26),
+                        height: cqSize(9),
                         background: "rgba(201,169,110,0.35)",
                         borderRadius: 1,
                         transform: "rotate(-2deg)",
@@ -627,16 +638,16 @@ export default function TimelineAlbumPage() {
 
                 {/* キャプション：写真の下、中央寄せで余白を持たせる */}
                 <div
-                  style={{ flexShrink: 0, marginTop: 18, textAlign: "center" }}
+                  style={{ flexShrink: 0, marginTop: cqSize(18), textAlign: "center" }}
                 >
                   {pin.title && (
                     <p
                       style={{
-                        fontSize: 12,
+                        fontSize: cqFont(12),
                         color: "#2C2416",
                         fontFamily: "Georgia, serif",
                         lineHeight: 1.5,
-                        marginBottom: 4,
+                        marginBottom: cqSize(4),
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -648,7 +659,7 @@ export default function TimelineAlbumPage() {
                   {pin.description && (
                     <p
                       style={{
-                        fontSize: 9,
+                        fontSize: cqFont(9),
                         color: "#7A6E5F",
                         fontFamily: "Georgia, serif",
                         lineHeight: 1.5,
@@ -664,10 +675,10 @@ export default function TimelineAlbumPage() {
                   {pin.category && (
                     <p
                       style={{
-                        fontSize: 8,
+                        fontSize: cqFont(8),
                         color: "#AFA495",
                         letterSpacing: "0.08em",
-                        marginTop: 8,
+                        marginTop: cqSize(8),
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -686,7 +697,7 @@ export default function TimelineAlbumPage() {
                     position: "absolute",
                     bottom: padBottom,
                     right: padX,
-                    fontSize: 8,
+                    fontSize: cqFont(8),
                     color: "#C4BAB0",
                     letterSpacing: "0.2em",
                     fontFamily: "Georgia, serif",
