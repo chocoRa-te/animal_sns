@@ -26,6 +26,7 @@ export default function TimelineAlbumTestPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const bookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [bookMax, setBookMax] = useState({ width: 900, height: 700 });
 
   // ================================================================
   // ここが今回の実験の本質：
@@ -34,6 +35,22 @@ export default function TimelineAlbumTestPage() {
   // useEffect によるリサイズ監視・pxの手計算は一切なし。
   // ================================================================
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const update = () => {
+      setBookMax({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [loading]); // loadingが変わったタイミングでも再測定する
   useEffect(() => {
     if (!session?.user?.id) return;
     fetch("/api/pins")
@@ -79,121 +96,14 @@ export default function TimelineAlbumTestPage() {
     "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400";
 
   // ページ内の余白はpx計算をやめ、%指定にしてCSSに追従させる
-  const PAGE_PADDING = "6% 10% 5%";
-
-  const leftPage = (key: string, date?: string) => (
-    <div
-      key={key}
-      style={{
-        background: "#F5F0E8",
-        width: "100%",
-        height: "100%",
-        boxSizing: "border-box",
-        padding: PAGE_PADDING,
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        filter: "grayscale(100%)",
-      }}
-    >
-      {/* 綴じ目の影（右端） */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 20,
-          background:
-            "linear-gradient(to right, transparent, rgba(44,36,22,0.16) 92%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {date && (
-        <p
-          style={{
-            fontSize: 9,
-            color: "#AFA495",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            fontFamily: "Georgia, serif",
-            flexShrink: 0,
-          }}
-        >
-          {date}
-        </p>
-      )}
-
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            position: "relative",
-            width: "60%",
-            maxWidth: 240,
-            transform: "rotate(1.5deg)",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              top: -7,
-              left: "40%",
-              width: 22,
-              height: 8,
-              background: "rgba(201,169,110,0.3)",
-              borderRadius: 1,
-              transform: "rotate(-3deg)",
-              zIndex: 1,
-            }}
-          />
-          <div
-            style={{
-              background: "#FFFFFF",
-              padding: "10px 10px 26px",
-              boxShadow:
-                "0 6px 16px rgba(44,36,22,0.12), 0 1px 3px rgba(44,36,22,0.06)",
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                aspectRatio: "4 / 5",
-                background: "#EDE8DC",
-                overflow: "hidden",
-              }}
-            >
-              <img
-                src={FIXED_IMAGE}
-                alt=""
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  opacity: 0.12,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const PAGE_PADDING = "4% 6% 4%";
 
   return (
     <div
       style={{
         background: "#F5F0E8",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
       }}
@@ -255,19 +165,19 @@ export default function TimelineAlbumTestPage() {
           justifyContent: "center",
           position: "relative",
           overflow: "hidden",
-          padding: "0 24px",
+          padding: "0 16px", // 左右の余白を最小限に。上下は指定しないので自然に空く
         }}
       >
         {/* @ts-ignore */}
         <HTMLFlipBook
           ref={bookRef}
-          width={500}
-          height={700}
+          width={850}
+          height={739}
           size="stretch"
-          minWidth={280}
-          maxWidth={900}
-          minHeight={400}
-          maxHeight={1200}
+          minWidth={380}
+          maxWidth={Math.min(1900, bookMax.width - 32)}
+          minHeight={330}
+          maxHeight={Math.min(1652, bookMax.height - 16)}
           showCover={true}
           usePortrait={true}
           mobileScrollSupport={true}
@@ -275,11 +185,10 @@ export default function TimelineAlbumTestPage() {
           drawShadow={true}
           flippingTime={1700}
           startZIndex={20}
-          autoSize={true}
+          autoSize={false}
           maxShadowOpacity={0.5}
           onFlip={(e: any) => {
-            const photoIndex = Math.round(e.data / 2);
-            setCurrentPage(Math.min(Math.max(0, photoIndex), pins.length));
+            setCurrentPage(Math.min(Math.max(0, e.data), pins.length));
           }}
           style={{ boxShadow: "-8px 0 24px rgba(0,0,0,0.3)" }}
         >
@@ -423,34 +332,8 @@ export default function TimelineAlbumTestPage() {
             </p>
           </div>
 
-          {/* ページ1：表紙をめくった後の左ページ */}
-          <div
-            key="cover-left"
-            style={{
-              background: "#F5F0E8",
-              width: "100%",
-              height: "100%",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                bottom: 0,
-                width: 20,
-                background:
-                  "linear-gradient(to right, transparent, rgba(44,36,22,0.16) 92%)",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-
-          {/* 各写真ページ */}
-          {pins.flatMap((pin, i) => [
-            /* 右ページ（写真） */
+          {/* 各写真ページ（1枚 = 1ページ） */}
+          {pins.map((pin, i) => (
             <div
               key={pin.id}
               style={{
@@ -508,6 +391,7 @@ export default function TimelineAlbumTestPage() {
                     position: "relative",
                     width: "78%",
                     maxWidth: 340,
+                    maxHeight: "100%", // 追加：ページの高さを超えないように
                     transform: "rotate(-1.2deg)",
                   }}
                 >
@@ -624,18 +508,8 @@ export default function TimelineAlbumTestPage() {
               >
                 {String(i + 1).padStart(2, "0")}
               </p>
-            </div>,
-
-            /* 左ページ（固定画像） */
-            leftPage(
-              `left-${pin.id}`,
-              new Date(pin.createdAt).toLocaleDateString("ja-JP", {
-                month: "long",
-                day: "numeric",
-                weekday: "short",
-              }),
-            ),
-          ])}
+            </div>
+          ))}
 
           {/* 枚数調整用の空ページ */}
           {pins.length % 2 !== 0 ? (
