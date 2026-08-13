@@ -171,7 +171,7 @@ export default function TimelineAlbumPage() {
         </p>
       )}
 
-      {/* 写真：縦中央配置、比率固定 */}
+      {/* 写真：縦中央配置。幅・高さ両方の制約に収まるようaspectRatioで固定 */}
       <div
         style={{
           flex: 1,
@@ -184,18 +184,21 @@ export default function TimelineAlbumPage() {
         <div
           style={{
             position: "relative",
-            width: "60%",
-            maxWidth: cqSize(240),
+            width: "auto",
+            height: "auto",
+            maxWidth: "60%",
+            maxHeight: "100%",
+            aspectRatio: "240 / 311", // 白枠込みのカード全体の縦横比（固定）
             transform: "rotate(1.5deg)",
           }}
         >
           <div
             style={{
               position: "absolute",
-              top: `-${cqSize(7)}`,
+              top: "-2.9%",
               left: "40%",
-              width: cqSize(22),
-              height: cqSize(8),
+              width: "9.2%",
+              height: "3.3%",
               background: "rgba(201,169,110,0.3)",
               borderRadius: 1,
               transform: "rotate(-3deg)",
@@ -205,15 +208,20 @@ export default function TimelineAlbumPage() {
           <div
             style={{
               background: "#FFFFFF",
-              padding: "10px 10px 26px",
+              width: "100%",
+              height: "100%",
+              boxSizing: "border-box",
+              padding: "4.2% 4.2% 10.8%",
+              display: "flex",
+              flexDirection: "column",
               boxShadow:
                 "0 6px 16px rgba(44,36,22,0.12), 0 1px 3px rgba(44,36,22,0.06)",
             }}
           >
             <div
               style={{
-                width: "100%",
-                aspectRatio: "4 / 5",
+                flex: 1,
+                minHeight: 0,
                 background: "#EDE8DC",
                 overflow: "hidden",
               }}
@@ -586,18 +594,21 @@ export default function TimelineAlbumPage() {
                   <div
                     style={{
                       position: "relative",
-                      width: "78%",
-                      maxWidth: cqSize(340),
+                      width: "auto",
+                      height: "auto",
+                      maxWidth: "78%",
+                      maxHeight: "100%",
+                      aspectRatio: "340 / 436", // 白枠込みのカード全体の縦横比（固定）
                       transform: "rotate(-1.2deg)",
                     }}
                   >
                     <div
                       style={{
                         position: "absolute",
-                        top: `-${cqSize(7)}`,
+                        top: "-1.6%",
                         left: "44%",
-                        width: cqSize(26),
-                        height: cqSize(9),
+                        width: "7.6%",
+                        height: "2.1%",
                         background: "rgba(201,169,110,0.35)",
                         borderRadius: 1,
                         transform: "rotate(-2deg)",
@@ -607,15 +618,20 @@ export default function TimelineAlbumPage() {
                     <div
                       style={{
                         background: "#FFFFFF",
-                        padding: "14px 14px 32px",
+                        width: "100%",
+                        height: "100%",
+                        boxSizing: "border-box",
+                        padding: "3.2% 3.2% 7.3%",
+                        display: "flex",
+                        flexDirection: "column",
                         boxShadow:
                           "0 10px 28px rgba(44,36,22,0.16), 0 2px 6px rgba(44,36,22,0.08)",
                       }}
                     >
                       <div
                         style={{
-                          width: "100%",
-                          aspectRatio: "4 / 5",
+                          flex: 1,
+                          minHeight: 0,
                           background: "#EDE8DC",
                           overflow: "hidden",
                         }}
