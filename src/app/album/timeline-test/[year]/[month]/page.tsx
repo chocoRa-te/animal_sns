@@ -35,17 +35,16 @@ export default function TimelineAlbumPage() {
     const container = containerRef.current;
     if (!container) return;
 
-    const RATIO = 1170 / 740; // 1ページの基準比率（横長）
+    const RATIO = 1170 / 740;
     const MIN_PW = 220;
-    const sliverRatio = 0.06; // 左ページの覗き幅の比率
-    const rightMarginRatio = 0.02; // 右端に残す余白の比率
+    const sliverRatio = 0.06;
+    const rightMarginRatio = 0.02; // 右端の余白
+    const verticalMarginRatio = 0.04; // 上下の余白（影のためのスペース）
 
     const updateSize = () => {
       const availW = container.clientWidth;
-      const availH = container.clientHeight;
+      const availH = container.clientHeight * (1 - verticalMarginRatio); // 上下に余白を残す
 
-      // 「2ページ分」として半分に割るのではなく、
-      // 「右ページ＋左ページの覗き分」だけで幅いっぱいを計算する
       let pw = (availW * (1 - rightMarginRatio)) / (1 + sliverRatio);
       let ph = pw / RATIO;
       if (ph > availH) {
