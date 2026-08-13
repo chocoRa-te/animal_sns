@@ -35,15 +35,19 @@ export default function TimelineAlbumPage() {
     const container = containerRef.current;
     if (!container) return;
 
-    const RATIO = 1170 / 740;
     const MIN_PW = 220;
     const sliverRatio = 0.06;
-    const rightMarginRatio = 0.02; // 右端の余白
-    const verticalMarginRatio = 0.04; // 上下の余白（影のためのスペース）
+    const rightMarginRatio = 0.02;
+    const verticalMarginRatio = 0.04;
 
     const updateSize = () => {
       const availW = container.clientWidth;
-      const availH = container.clientHeight * (1 - verticalMarginRatio); // 上下に余白を残す
+      const availH = container.clientHeight * (1 - verticalMarginRatio);
+
+      // 本の縦横比を、その時々のコンテナ自体の形に合わせる。
+      // ただし横長になりすぎないよう1.58を上限、正方形より縦長にならないよう1.0を下限にする
+      const containerRatio = availW / availH;
+      const RATIO = Math.min(1.25, Math.max(0.95, containerRatio));
 
       let pw = (availW * (1 - rightMarginRatio)) / (1 + sliverRatio);
       let ph = pw / RATIO;
@@ -55,7 +59,8 @@ export default function TimelineAlbumPage() {
       ph = Math.floor(ph);
 
       const sliver = Math.max(20, Math.round(pw * sliverRatio));
-      const leftOffsetPx = -pw + sliver;
+      const extraLeftShift = 24; // この数値を大きくするほど、さらに左へ動く
+      const leftOffsetPx = -pw + sliver - extraLeftShift;
 
       setPageSize({ width: pw, height: ph });
       setLeftOffset(`${Math.round(leftOffsetPx)}px`);
@@ -122,8 +127,35 @@ export default function TimelineAlbumPage() {
   // 基準値やクランプが不要になり、常に正確に比例する。
   // 480pxのページ幅で気持ちよく見えるよう設計した値を、そのまま%に変換している。
   const cqSize = (basePx: number) => `${((basePx / 480) * 100).toFixed(3)}cqw`;
-  const cqFont = (basePx: number) =>
-    `clamp(7px, ${((basePx / 480) * 100).toFixed(3)}cqw, 999px)`;
+  const cqFont = (basePx: number) => {
+    const ratio = pageSize.width / 480;
+    const dampened = Math.pow(ratio, 0.6); // 1.0なら等倍、0.6で拡大率を弱める
+    return `clamp(7px, ${(basePx * dampened).toFixed(2)}px, 999px)`;
+  };
+
+  // 写真に使っていい高さ・幅を、%指定の曖昧さを避けて確定pxで計算する。
+  // 日付・キャプション（タイトル/説明/タグ）・余白の分を先に見積もって差し引く。
+  const dateLineH = Math.max(14, Math.round(pageSize.height * 0.035));
+  const captionH = Math.max(90, Math.round(pageSize.height * 0.2));
+  const photoMaxH = Math.max(
+    60,
+    pageSize.height - padTop - padBottom - dateLineH - captionH,
+  );
+  const photoMaxW = Math.round(pageSize.width * 0.78);
+
+  const leftDateLineH = Math.max(12, Math.round(pageSize.height * 0.03));
+  const leftPhotoMaxH = Math.max(
+    50,
+    pageSize.height - padTop - padBottom - leftDateLineH,
+  );
+  const leftPhotoMaxW = Math.round(pageSize.width * 0.6);
+
+  // 表紙は縦に要素が積み重なるレイアウトなので、幅基準(cqw)だと
+  // 横長ページで縦にはみ出す。幅と高さのうち小さい方を基準にする。
+  const coverBase = Math.min(pageSize.width, pageSize.height);
+  const coverPx = (basePx: number) => Math.round(basePx * (coverBase / 480));
+  const coverFont = (basePx: number) =>
+    Math.max(7, Math.round(basePx * (coverBase / 480)));
 
   const leftPage = (key: string, date?: string) => (
     <div
@@ -186,8 +218,8 @@ export default function TimelineAlbumPage() {
             position: "relative",
             width: "auto",
             height: "auto",
-            maxWidth: "60%",
-            maxHeight: "100%",
+            maxWidth: leftPhotoMaxW,
+            maxHeight: leftPhotoMaxH,
             aspectRatio: "240 / 311", // 白枠込みのカード全体の縦横比（固定）
             transform: "rotate(1.5deg)",
           }}
@@ -377,14 +409,13 @@ export default function TimelineAlbumPage() {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                containerType: "inline-size" as any,
               }}
             >
               {/* エンボス風の二重枠 */}
               <div
                 style={{
                   position: "absolute",
-                  inset: cqSize(18),
+                  inset: coverPx(18),
                   border: "1px solid rgba(44,36,22,0.18)",
                   pointerEvents: "none",
                 }}
@@ -392,7 +423,7 @@ export default function TimelineAlbumPage() {
               <div
                 style={{
                   position: "absolute",
-                  inset: cqSize(24),
+                  inset: coverPx(24),
                   border: "1px solid rgba(44,36,22,0.1)",
                   pointerEvents: "none",
                 }}
@@ -400,17 +431,33 @@ export default function TimelineAlbumPage() {
 
               {/* コーナー装飾（革表紙の金具風） */}
               {[
-                { top: cqSize(30), left: cqSize(30), borderWidth: `${cqSize(2)} 0 0 ${cqSize(2)}` },
-                { top: cqSize(30), right: cqSize(30), borderWidth: `${cqSize(2)} ${cqSize(2)} 0 0` },
-                { bottom: cqSize(30), left: cqSize(30), borderWidth: `0 0 ${cqSize(2)} ${cqSize(2)}` },
-                { bottom: cqSize(30), right: cqSize(30), borderWidth: `0 ${cqSize(2)} ${cqSize(2)} 0` },
+                {
+                  top: coverPx(30),
+                  left: coverPx(30),
+                  borderWidth: `${coverPx(2)}px 0 0 ${coverPx(2)}px`,
+                },
+                {
+                  top: coverPx(30),
+                  right: coverPx(30),
+                  borderWidth: `${coverPx(2)}px ${coverPx(2)}px 0 0`,
+                },
+                {
+                  bottom: coverPx(30),
+                  left: coverPx(30),
+                  borderWidth: `0 0 ${coverPx(2)}px ${coverPx(2)}px`,
+                },
+                {
+                  bottom: coverPx(30),
+                  right: coverPx(30),
+                  borderWidth: `0 ${coverPx(2)}px ${coverPx(2)}px 0`,
+                },
               ].map((pos, idx) => (
                 <div
                   key={idx}
                   style={{
                     position: "absolute",
-                    width: cqSize(20),
-                    height: cqSize(20),
+                    width: coverPx(20),
+                    height: coverPx(20),
                     borderColor: "#C9A96E",
                     borderStyle: "solid",
                     opacity: 0.7,
@@ -426,7 +473,7 @@ export default function TimelineAlbumPage() {
                   position: "absolute",
                   top: 0,
                   right: "16%",
-                  width: cqSize(14),
+                  width: coverPx(14),
                   height: "48%",
                   background: "#C9A96E",
                   boxShadow: "0 2px 6px rgba(44,36,22,0.2)",
@@ -437,15 +484,17 @@ export default function TimelineAlbumPage() {
               {/* 写真の窓：中身をのぞかせる円形フレーム */}
               <div
                 style={{
-                  width: "44%",
-                  maxWidth: cqSize(170),
+                  width: "auto",
+                  height: "auto",
+                  maxWidth: coverPx(170),
+                  maxHeight: coverPx(170),
                   aspectRatio: "1 / 1",
                   borderRadius: "50%",
                   overflow: "hidden",
-                  border: `${cqSize(3)} solid #F5F0E8`,
+                  border: `${coverPx(3)}px solid #F5F0E8`,
                   boxShadow:
                     "0 6px 18px rgba(44,36,22,0.22), 0 0 0 1px rgba(201,169,110,0.5)",
-                  marginBottom: cqSize(22),
+                  marginBottom: coverPx(22),
                   background: "#EDE8DC",
                 }}
               >
@@ -463,10 +512,10 @@ export default function TimelineAlbumPage() {
 
               <p
                 style={{
-                  fontSize: cqFont(10),
+                  fontSize: coverFont(10),
                   letterSpacing: "0.2em",
                   color: "#8A7757",
-                  marginBottom: cqSize(8),
+                  marginBottom: coverPx(8),
                 }}
               >
                 🐾 {year}年{month}月
@@ -474,7 +523,7 @@ export default function TimelineAlbumPage() {
 
               <p
                 style={{
-                  fontSize: cqFont(30),
+                  fontSize: coverFont(30),
                   fontWeight: 300,
                   color: "#2C2416",
                   fontFamily: "Georgia, serif",
@@ -489,16 +538,16 @@ export default function TimelineAlbumPage() {
 
               <div
                 style={{
-                  width: cqSize(32),
+                  width: coverPx(32),
                   height: 1,
                   background: "#C9A96E",
-                  margin: `${cqSize(18)} auto`,
+                  margin: `${coverPx(18)}px auto`,
                 }}
               />
 
               <p
                 style={{
-                  fontSize: cqFont(9),
+                  fontSize: coverFont(9),
                   color: "#8A7757",
                   letterSpacing: "0.1em",
                 }}
@@ -596,8 +645,8 @@ export default function TimelineAlbumPage() {
                       position: "relative",
                       width: "auto",
                       height: "auto",
-                      maxWidth: "78%",
-                      maxHeight: "100%",
+                      maxWidth: photoMaxW,
+                      maxHeight: photoMaxH,
                       aspectRatio: "340 / 436", // 白枠込みのカード全体の縦横比（固定）
                       transform: "rotate(-1.2deg)",
                     }}
@@ -654,7 +703,11 @@ export default function TimelineAlbumPage() {
 
                 {/* キャプション：写真の下、中央寄せで余白を持たせる */}
                 <div
-                  style={{ flexShrink: 0, marginTop: cqSize(18), textAlign: "center" }}
+                  style={{
+                    flexShrink: 0,
+                    marginTop: cqSize(18),
+                    textAlign: "center",
+                  }}
                 >
                   {pin.title && (
                     <p
