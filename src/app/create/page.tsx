@@ -19,6 +19,14 @@ export default function CreatePage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    fetch(`/api/settings?userId=${session.user.id}`)
+      .then((res) => res.json())
+      .then((data) => setIsPublic(data?.defaultPostVisibility ?? true));
+  }, [session]);
 
   useEffect(() => {
     const prevent = (e: DragEvent) => e.preventDefault();
@@ -118,6 +126,7 @@ export default function CreatePage() {
           imageUrl,
           category: tags.join(","),
           userId: session?.user?.id,
+          isPublic,
         }),
       });
 
@@ -167,6 +176,14 @@ export default function CreatePage() {
             {loading ? "保存中..." : "残す"}
           </button>
         </div>
+
+        {/* 公開設定 */}
+        <button
+          onClick={() => setIsPublic(!isPublic)}
+          className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-[#DDD5C4] text-[#7A6E5F] hover:bg-[#EDE8DC] transition-colors"
+        >
+          {isPublic ? "🌐 公開" : "🔒 非公開"}
+        </button>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-500 rounded-xl text-sm">

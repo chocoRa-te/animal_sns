@@ -26,6 +26,7 @@ export async function GET(request: Request) {
             commentsEnabled: true,
             showReadReceipt: true,
             allowDMRequests: true,
+            defaultPostVisibility: true,
         },
     })
 
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
 
 // 設定更新
 export async function PATCH(request: Request) {
-    const { userId, name, showLikeCount, notificationsOn, isPrivate, currentPassword, newPassword, image, bio, showActivity, commentsEnabled, showReadReceipt, allowDMRequests } = await request.json()
+    const { userId, name, showLikeCount, notificationsOn, isPrivate, currentPassword, newPassword, image, bio, showActivity, commentsEnabled, showReadReceipt, allowDMRequests, defaultPostVisibility } = await request.json()
 
     if (!userId) {
         return NextResponse.json({ message: "userIdが必要です" }, { status: 400 })
@@ -72,6 +73,7 @@ export async function PATCH(request: Request) {
             ...(commentsEnabled !== undefined && { commentsEnabled }),
             ...(showReadReceipt !== undefined && { showReadReceipt }),
             ...(allowDMRequests !== undefined && { allowDMRequests }),
+            ...(defaultPostVisibility !== undefined && { defaultPostVisibility }),
         },
     })
 

@@ -89,175 +89,202 @@ export default function VideoPage() {
   }
 
   return (
-    <div className="h-screen bg-[#1A1208] overflow-hidden" onWheel={handleScroll}>
+    <div
+      className="h-screen w-full bg-[#F5F0E8] overflow-hidden flex items-center justify-center p-4 md:p-8"
+      onWheel={handleScroll}
+    >
       {videos.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <p className="text-[#AFA495] text-sm">まだ動画がありません</p>
         </div>
       ) : currentVideo ? (
-        <div className="relative h-full flex items-center justify-center">
-          {/* 動画 */}
-          <video
-            ref={videoRef}
-            key={currentVideo.id}
-            src={currentVideo.videoUrl}
-            className="h-full w-full object-cover"
-            autoPlay
-            loop
-            muted={isMuted}
-            playsInline
-            onClick={() => {
-              if (clickTimer.current) {
-                clearTimeout(clickTimer.current)
-                clickTimer.current = null
-                return
-              }
-              clickTimer.current = setTimeout(() => {
-                if (videoRef.current) {
-                  if (isPlaying) {
-                    videoRef.current.pause()
-                  } else {
-                    videoRef.current.play()
-                  }
-                  setIsPlaying(!isPlaying)
-                  setShowIcon(true)
-                  setTimeout(() => setShowIcon(false), 800)
+        <div className="flex flex-row items-end gap-3 md:gap-6">
+          {/* フィルム風フレーム */}
+          <div
+            className="relative rounded-[26px] overflow-hidden bg-[#2C2416] shadow-[0_24px_60px_rgba(44,36,22,0.28)]"
+            style={{
+              aspectRatio: "9 / 16",
+              height: "min(82vh, 900px)",
+              maxWidth: "92vw",
+            }}
+          >
+            {/* フィルムの縁（上） */}
+            <div className="absolute top-0 left-0 right-0 z-20 flex justify-between px-2 py-1.5 bg-[#2C2416]/90">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="w-2 h-1.5 bg-[#F5F0E8]/25 rounded-[1px]" />
+              ))}
+            </div>
+
+            {/* 動画 */}
+            <video
+              ref={videoRef}
+              key={currentVideo.id}
+              src={currentVideo.videoUrl}
+              className="h-full w-full object-cover"
+              autoPlay
+              loop
+              muted={isMuted}
+              playsInline
+              onClick={() => {
+                if (clickTimer.current) {
+                  clearTimeout(clickTimer.current)
+                  clickTimer.current = null
+                  return
                 }
-                clickTimer.current = null
-              }, 250)
-            }}
-            onDoubleClick={async () => {
-              if (!session?.user?.id || !currentVideo) return
-              const res = await fetch("/api/likes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pinId: currentVideo.id, userId: session.user.id }),
-              })
-              const data = await res.json()
-              setLiked(data.liked)
-              setLikeCount((prev) => (data.liked ? prev + 1 : prev - 1))
-              setShowHeart(true)
-              setTimeout(() => setShowHeart(false), 1000)
-            }}
-            onTimeUpdate={() => {
-              if (videoRef.current) setProgress(videoRef.current.currentTime)
-            }}
-            onLoadedMetadata={() => {
-              if (videoRef.current) setDuration(videoRef.current.duration)
-            }}
-          />
+                clickTimer.current = setTimeout(() => {
+                  if (videoRef.current) {
+                    if (isPlaying) {
+                      videoRef.current.pause()
+                    } else {
+                      videoRef.current.play()
+                    }
+                    setIsPlaying(!isPlaying)
+                    setShowIcon(true)
+                    setTimeout(() => setShowIcon(false), 800)
+                  }
+                  clickTimer.current = null
+                }, 250)
+              }}
+              onDoubleClick={async () => {
+                if (!session?.user?.id || !currentVideo) return
+                const res = await fetch("/api/likes", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ pinId: currentVideo.id, userId: session.user.id }),
+                })
+                const data = await res.json()
+                setLiked(data.liked)
+                setLikeCount((prev) => (data.liked ? prev + 1 : prev - 1))
+                setShowHeart(true)
+                setTimeout(() => setShowHeart(false), 1000)
+              }}
+              onTimeUpdate={() => {
+                if (videoRef.current) setProgress(videoRef.current.currentTime)
+              }}
+              onLoadedMetadata={() => {
+                if (videoRef.current) setDuration(videoRef.current.duration)
+              }}
+            />
 
-          {/* オーバーレイ */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
+            {/* オーバーレイ */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/75 pointer-events-none" />
 
-          {/* 一時停止・再生アイコン */}
-          {showIcon && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-16 h-16 rounded-full bg-black/40 flex items-center justify-center">
-                {isPlaying ? (
-                  <Play className="h-8 w-8 text-white ml-1" />
-                ) : (
-                  <Pause className="h-8 w-8 text-white" />
-                )}
+            {/* 一時停止・再生アイコン */}
+            {showIcon && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-16 h-16 rounded-full bg-black/40 flex items-center justify-center">
+                  {isPlaying ? (
+                    <Play className="h-8 w-8 text-white ml-1" />
+                  ) : (
+                    <Pause className="h-8 w-8 text-white" />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* ダブルタップいいねアニメーション */}
-          {showHeart && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <Heart className="h-24 w-24 text-red-400 fill-red-400 animate-ping" />
-            </div>
-          )}
-
-          {/* 右側アクション */}
-          <div className="absolute right-4 bottom-36 flex flex-col items-center gap-6">
-            {/* いいね */}
-            <button onClick={handleLike} className="flex flex-col items-center gap-1">
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                <Heart className={`h-5 w-5 ${liked ? "text-red-400 fill-red-400" : "text-white"}`} />
+            {/* ダブルタップいいねアニメーション */}
+            {showHeart && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <Heart className="h-24 w-24 text-[#C9A96E] fill-[#C9A96E] animate-ping" />
               </div>
+            )}
+
+            {/* シークバー */}
+            <div className="absolute bottom-16 left-0 right-0 z-10 px-4">
+              <input
+                type="range"
+                min={0}
+                max={duration}
+                value={progress}
+                step={0.1}
+                className="w-full h-0.5 appearance-none rounded-full cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #C9A96E ${(progress / duration) * 100}%, rgba(255,255,255,0.2) ${(progress / duration) * 100}%)`,
+                }}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value)
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = val
+                    setProgress(val)
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* 下部情報 */}
+            <div className="absolute bottom-6 left-4 right-4">
+              <p
+                className="text-white/90 font-medium text-sm mb-1 cursor-pointer"
+                onClick={() => router.push(`/users/${currentVideo.userId}`)}
+              >
+                🐾 @{currentVideo.user?.name}
+              </p>
+              {currentVideo.title && (
+                <p className="text-white/80 text-sm mb-1">{currentVideo.title}</p>
+              )}
+              {currentVideo.description && (
+                <p className="text-white/60 text-xs line-clamp-2">{currentVideo.description}</p>
+              )}
+              {currentVideo.category && (
+                <div className="flex gap-1 flex-wrap mt-1">
+                  {currentVideo.category.split(",").filter(Boolean).map((tag) => (
+                    <span key={tag} className="text-[#C9A96E]/90 text-xs">#{tag.trim()}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* インジケーター */}
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-1 z-10">
+              {videos.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-0.5 rounded-full transition-all ${i === currentIndex ? "h-6 bg-[#C9A96E]" : "h-2 bg-white/25"}`}
+                />
+              ))}
+            </div>
+
+            {/* フィルムの縁（下） */}
+            <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-between px-2 py-1.5 bg-[#2C2416]/90">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="w-2 h-1.5 bg-[#F5F0E8]/25 rounded-[1px]" />
+              ))}
+            </div>
+          </div>
+
+          {/* アクションボタン（フレームの外） */}
+          <div className="flex flex-col items-center gap-5">
+            <button onClick={handleLike} className="flex flex-col items-center gap-1.5">
+              <div className="w-12 h-12 rounded-full bg-[#EDE8DC] border border-[#DDD5C4] flex items-center justify-center shadow-sm hover:bg-[#E4DDCC] transition-colors">
+                <Heart className={`h-5 w-5 ${liked ? "text-[#C9A96E] fill-[#C9A96E]" : "text-[#2C2416]"}`} />
+              </div>
+              <span className="text-[10px] text-[#7A6E5F] font-medium">{likeCount}</span>
             </button>
 
-            {/* ミュート */}
-            <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1">
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+            <button onClick={() => setIsMuted(!isMuted)} className="flex flex-col items-center gap-1.5">
+              <div className="w-12 h-12 rounded-full bg-[#EDE8DC] border border-[#DDD5C4] flex items-center justify-center shadow-sm hover:bg-[#E4DDCC] transition-colors">
                 {isMuted ? (
-                  <VolumeX className="h-5 w-5 text-white" />
+                  <VolumeX className="h-5 w-5 text-[#2C2416]" />
                 ) : (
-                  <Volume2 className="h-5 w-5 text-white" />
+                  <Volume2 className="h-5 w-5 text-[#2C2416]" />
                 )}
               </div>
+              <span className="text-[10px] text-[#7A6E5F] font-medium">{isMuted ? "OFF" : "ON"}</span>
             </button>
 
-            {/* コメント */}
             <button
               onClick={() => {
                 setShowComments(true)
                 if (currentVideo) fetchComments(currentVideo.id)
               }}
-              className="flex flex-col items-center gap-1"
+              className="flex flex-col items-center gap-1.5"
             >
-              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
-                <MessageCircle className="h-5 w-5 text-white" />
+              <div className="w-12 h-12 rounded-full bg-[#EDE8DC] border border-[#DDD5C4] flex items-center justify-center shadow-sm hover:bg-[#E4DDCC] transition-colors">
+                <MessageCircle className="h-5 w-5 text-[#2C2416]" />
               </div>
+              <span className="text-[10px] text-[#7A6E5F] font-medium">{comments.length || ""}</span>
             </button>
-          </div>
-
-          {/* シークバー */}
-          <div className="absolute bottom-20 left-0 right-0 z-10 px-4">
-            <input
-              type="range"
-              min={0}
-              max={duration}
-              value={progress}
-              step={0.1}
-              className="w-full h-0.5 appearance-none rounded-full cursor-pointer"
-              style={{
-                background: `linear-gradient(to right, #C9A96E ${(progress / duration) * 100}%, rgba(255,255,255,0.2) ${(progress / duration) * 100}%)`,
-              }}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value)
-                if (videoRef.current) {
-                  videoRef.current.currentTime = val
-                  setProgress(val)
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-
-          {/* 下部情報 */}
-          <div className="absolute bottom-24 left-4 right-20">
-            <p
-              className="text-white/90 font-medium text-sm mb-1 cursor-pointer"
-              onClick={() => router.push(`/users/${currentVideo.userId}`)}
-            >
-              @{currentVideo.user?.name}
-            </p>
-            {currentVideo.title && (
-              <p className="text-white/80 text-sm mb-1">{currentVideo.title}</p>
-            )}
-            {currentVideo.description && (
-              <p className="text-white/60 text-xs line-clamp-2">{currentVideo.description}</p>
-            )}
-            {currentVideo.category && (
-              <div className="flex gap-1 flex-wrap mt-1">
-                {currentVideo.category.split(",").filter(Boolean).map((tag) => (
-                  <span key={tag} className="text-[#C9A96E]/80 text-xs">#{tag.trim()}</span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* インジケーター */}
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1">
-            {videos.map((_, i) => (
-              <div
-                key={i}
-                className={`w-0.5 rounded-full transition-all ${i === currentIndex ? "h-6 bg-[#C9A96E]" : "h-2 bg-white/20"}`}
-              />
-            ))}
           </div>
         </div>
       ) : null}

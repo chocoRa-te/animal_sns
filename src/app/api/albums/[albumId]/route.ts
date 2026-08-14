@@ -8,6 +8,9 @@ export async function GET(
     request: Request,
     { params }: { params: { albumId: string } }
 ) {
+    const { searchParams } = new URL(request.url)
+    const viewerId = searchParams.get("viewerId")
+
     const album = await prisma.album.findUnique({
         where: { id: params.albumId },
         include: {
@@ -20,6 +23,11 @@ export async function GET(
 
     if (!album) {
         return NextResponse.json({ message: "アルバムが見つかりません" }, { status: 404 })
+    }
+
+    // 非公開アルバムは本人以外アクセス不可
+    if (!album.isPublic && viewerId !== album.userId) {
+        return NextResponse.json({ message: "このアルバムは非公開です" }, { status: 403 })
     }
 
     return NextResponse.json(album)

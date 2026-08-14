@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -18,6 +18,14 @@ export default function VideoUploadPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isPublic, setIsPublic] = useState(true);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    fetch(`/api/settings?userId=${session.user.id}`)
+      .then((res) => res.json())
+      .then((data) => setIsPublic(data?.defaultPostVisibility ?? true));
+  }, [session]);
 
   // ファイル選択処理
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,6 +87,7 @@ export default function VideoUploadPage() {
           category: tags.join(","),
           userId: session.user.id,
           type: "video",
+          isPublic,
         }),
       });
 
@@ -97,6 +106,14 @@ export default function VideoUploadPage() {
         <h1 className="text-xl font-semibold mb-6 text-[#1A1814]">
           動画を投稿
         </h1>
+
+        {/* 公開設定 */}
+        <button
+          onClick={() => setIsPublic(!isPublic)}
+          className="mb-4 flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-[#DDD5C4] text-[#7A6E5F] hover:bg-[#F0EDE8] transition-colors"
+        >
+          {isPublic ? "🌐 公開" : "🔒 非公開"}
+        </button>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-500 rounded-lg text-sm">

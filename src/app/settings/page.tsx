@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [commentsEnabled, setCommentsEnabled] = useState(true)
   const [showReadReceipt, setShowReadReceipt] = useState(true)
   const [allowDMRequests, setAllowDMRequests] = useState(true)
+  const [defaultPostVisibility, setDefaultPostVisibility] = useState(true)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [message, setMessage] = useState("")
@@ -61,6 +62,7 @@ export default function SettingsPage() {
         setCommentsEnabled(data.commentsEnabled)
         setShowReadReceipt(data.showReadReceipt)
         setAllowDMRequests(data.allowDMRequests)
+        setDefaultPostVisibility(data.defaultPostVisibility ?? true)
       })
   }, [session])
 
@@ -156,6 +158,12 @@ export default function SettingsPage() {
             description="投稿へのコメントを受け付ける"
             value={commentsEnabled}
             onChange={() => { const v = !commentsEnabled; setCommentsEnabled(v); handleToggle("commentsEnabled", v) }}
+          />
+          <SettingRow
+            label="新規投稿をデフォルトで公開"
+            description="オフにすると、新しい投稿・動画は初期状態で非公開になる"
+            value={defaultPostVisibility}
+            onChange={() => { const v = !defaultPostVisibility; setDefaultPostVisibility(v); handleToggle("defaultPostVisibility", v) }}
           />
         </section>
 

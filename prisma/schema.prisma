@@ -25,6 +25,7 @@ model User {
   showReadReceipt       Boolean   @default(true) // 既読表示のオン・オフ
   allowDMRequests       Boolean   @default(true) // メッセージリクエストのオン・オフ
   requireFollowApproval Boolean   @default(false) // フォロー承認制
+  defaultPostVisibility Boolean   @default(true) // 新規投稿のデフォルト公開設定
 
   accounts          Account[]
   sessions          Session[]
@@ -81,6 +82,7 @@ model VerificationToken {
 model Album {
   id        String     @id @default(cuid())
   title     String
+  isPublic  Boolean    @default(true) // 公開設定
   userId    String
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   pins      AlbumPin[]
@@ -100,15 +102,16 @@ model AlbumPin {
 }
 
 model Pin {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   title       String
   description String?
   imageUrl    String
-  category    String?  @default("その他")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  videoUrl    String? // 動画URL
-  type        String   @default("image") // "image" | "video"
+  category    String? @default("その他")
+  isPublic    Boolean @default(true) // 公開設定
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  videoUrl  String? // 動画URL
+  type      String   @default("image") // "image" | "video"
 
   userId  String
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)

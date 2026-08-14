@@ -1,62 +1,80 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import { ChevronLeft, Check, Play } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, Check, Play } from "lucide-react";
 
 interface Pin {
-  id: string
-  title: string
-  imageUrl: string
-  videoUrl?: string
-  type: string
-  category: string
-  createdAt: string
+  id: string;
+  title: string;
+  imageUrl: string;
+  videoUrl?: string;
+  type: string;
+  category: string;
+  createdAt: string;
 }
 
 export default function CreateAlbumPage() {
-  const { data: session } = useSession()
-  const router = useRouter()
-  const [pins, setPins] = useState<Pin[]>([])
-  const [selectedPins, setSelectedPins] = useState<string[]>([])
-  const [title, setTitle] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [filter, setFilter] = useState("すべて")
-  const [allTags, setAllTags] = useState<string[]>([])
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [selectedPins, setSelectedPins] = useState<string[]>([]);
+  const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("すべて");
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [isPublic, setIsPublic] = useState(true);
 
   useEffect(() => {
-    if (!session?.user?.id) return
-    fetch("/api/pins")
+    if (!session?.user?.id) return;
+    fetch(`/api/settings?userId=${session.user.id}`)
+      .then((res) => res.json())
+      .then((data) => setIsPublic(data?.defaultPostVisibility ?? true));
+
+    fetch(`/api/pins?viewerId=${session.user.id}`)
       .then((res) => res.json())
       .then((data) => {
-        const myPins = data.filter((pin: any) => pin.userId === session.user.id)
-        setPins(myPins)
-
+        const myPins = data.filter(
+          (pin: any) => pin.userId === session.user.id,
+        );
+        setPins(myPins);
         // タグ一覧
-        const tags = Array.from(new Set(
-          myPins.flatMap((pin: any) =>
-            pin.category ? pin.category.split(",").map((t: string) => t.trim()).filter(Boolean) : []
-          )
-        )) as string[]
-        setAllTags(tags)
-      })
-  }, [session])
+        const tags = Array.from(
+          new Set(
+            myPins.flatMap((pin: any) =>
+              pin.category
+                ? pin.category
+                    .split(",")
+                    .map((t: string) => t.trim())
+                    .filter(Boolean)
+                : [],
+            ),
+          ),
+        ) as string[];
+        setAllTags(tags);
+      });
+  }, [session]);
 
   const filteredPins = pins.filter((pin) => {
-    if (filter === "すべて") return true
-    return pin.category?.split(",").map((t) => t.trim()).includes(filter)
-  })
+    if (filter === "すべて") return true;
+    return pin.category
+      ?.split(",")
+      .map((t) => t.trim())
+      .includes(filter);
+  });
 
   const togglePin = (pinId: string) => {
     setSelectedPins((prev) =>
-      prev.includes(pinId) ? prev.filter((id) => id !== pinId) : [...prev, pinId]
-    )
-  }
+      prev.includes(pinId)
+        ? prev.filter((id) => id !== pinId)
+        : [...prev, pinId],
+    );
+  };
 
   const handleCreate = async () => {
-    if (!title.trim() || !session?.user?.id) return
-    setLoading(true)
+    if (!title.trim() || !session?.user?.id) return;
+    setLoading(true);
     await fetch("/api/albums", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,12 +82,13 @@ export default function CreateAlbumPage() {
         title,
         userId: session.user.id,
         pinIds: selectedPins,
+        isPublic,
       }),
-    })
-    router.back()
-  }
+    });
+    router.back();
+  };
 
-  if (!session) return null
+  if (!session) return null;
 
   return (
     <div className="min-h-screen bg-[#F5F0E8] pb-24">
@@ -92,7 +111,18 @@ export default function CreateAlbumPage() {
         </button>
       </div>
 
+      {/* 公開設定 */}
+      <div className="px-4 pt-4">
+        <button
+          onClick={() => setIsPublic(!isPublic)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-[#DDD5C4] text-[#7A6E5F] hover:bg-[#EDE8DC] transition-colors"
+        >
+          {isPublic ? "🌐 公開" : "🔒 非公開"}
+        </button>
+      </div>
+
       <div className="px-4 py-4">
+        
         {/* アルバム名 */}
         <div className="mb-6">
           <input
@@ -136,14 +166,25 @@ export default function CreateAlbumPage() {
               onClick={() => togglePin(pin.id)}
             >
               {pin.imageUrl ? (
-                <img src={pin.imageUrl} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={pin.imageUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
               ) : pin.videoUrl ? (
-                <video src={pin.videoUrl} className="w-full h-full object-cover" muted />
+                <video
+                  src={pin.videoUrl}
+                  className="w-full h-full object-cover"
+                  muted
+                />
               ) : null}
 
               {pin.type === "video" && (
                 <div className="absolute top-1 right-1">
-                  <Play className="h-3.5 w-3.5 text-white drop-shadow" fill="white" />
+                  <Play
+                    className="h-3.5 w-3.5 text-white drop-shadow"
+                    fill="white"
+                  />
                 </div>
               )}
 
@@ -160,9 +201,11 @@ export default function CreateAlbumPage() {
         </div>
 
         {filteredPins.length === 0 && (
-          <p className="text-center text-[#AFA495] text-sm mt-8">写真がありません</p>
+          <p className="text-center text-[#AFA495] text-sm mt-8">
+            写真がありません
+          </p>
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -30,7 +30,12 @@ export default function UserProfilePage() {
   >("none");
   const [isBlocked, setIsBlocked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isPrivateAccount, setIsPrivateAccount] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 自分自身か、承認済みフォロワーなら中身が見える
+  const canViewContent =
+    !isPrivateAccount || session?.user?.id === id || followStatus === "accepted";
 
   // メニューの外をクリックしたら閉じる
   useEffect(() => {
@@ -46,8 +51,16 @@ export default function UserProfilePage() {
   useEffect(() => {
     if (!id) return;
 
-    // ピン取得
-    fetch("/api/pins")
+    // 対象ユーザーの鍵垢設定を取得
+    fetch(`/api/settings?userId=${id}`)
+      .then((res) => res.json())
+      .then((data) => setIsPrivateAccount(!!data?.isPrivate));
+
+    // ピン取得（viewerIdを渡し、サーバー側で公開範囲を絞り込む）
+    const viewerParam = session?.user?.id
+      ? `&viewerId=${session.user.id}`
+      : "";
+    fetch(`/api/pins?${viewerParam}`)
       .then((res) => res.json())
       .then((data) => {
         const userPins = data
@@ -222,6 +235,15 @@ export default function UserProfilePage() {
           <p className="text-center text-[#A39E99] text-sm mt-8">
             このユーザーをブロックしています
           </p>
+        ) : !canViewContent ? (
+          <div className="text-center mt-8">
+            <p className="text-[#A39E99] text-sm mb-1">
+              このアカウントは非公開です
+            </p>
+            <p className="text-[#C4BAB0] text-xs">
+              フォローが承認されると投稿が見れるようになります
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {pins.map((pin) => (
